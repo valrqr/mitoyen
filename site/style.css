@@ -182,3 +182,6 @@ footer p + p { margin-top: 8px; }
   .encart h2 { font-size: 26px; }
   .encart .btn { justify-self: start; }
 }
+.boutons-encart { display: grid; gap: 12px; justify-items: center; }
+.lien-guide { font-size: 15px; color: var(--encre); }
+@media (max-width: 809px) { .boutons-encart { justify-items: start; } }
