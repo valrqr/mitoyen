@@ -1,0 +1,3 @@
+# Publication de la vitrine mitoyen.app par statichost.eu
+# Pas de build : le dossier site/ est publié tel quel.
+public: site
