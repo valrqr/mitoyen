@@ -130,3 +130,8 @@ footer p + p { margin-top: 8px; }
   .courrier { transform: none; padding: 24px; }
   .mentions h1 { font-size: 34px; }
 }
+
+/* Logo */
+.logo img { display: block; width: 36px; height: auto; }
+.logo-grand { justify-self: end; width: 100%; max-width: 380px; height: auto; }
+@media (max-width: 809px) { .logo-grand { justify-self: center; max-width: 260px; } }
