@@ -16,6 +16,7 @@ Le moteur sert aussi une interface web, à l'adresse `/app`. Pas d'application �
 | **Assemblées générales** | Préparer une AG (l'ordre du jour habituel est proposé), voir son calendrier légal, ouvrir les formulaires de vote, la feuille de présence, le procès-verbal |
 | **Travaux** | Un dossier par chantier : ajouter les devis (montant, validité, PDF), les voir dans leur ordre d'arrivée sans classement ni recommandation, la quote-part de chacun selon chaque devis, qui doit décider et selon quelle majorité, le comparatif à joindre à la convocation |
 | **Plan de travaux** | Le financement des dix ans du plan en un graphique : la part payée par le fonds, la part à appeler en plus. Un simulateur recalcule tout quand on change la cotisation ou la hausse des prix. Pour chaque ligne : ouvrir le dossier de travaux, la reporter, la marquer réalisée |
+| **Signalements** | Le lien de la copropriété et l'affiche du hall avec son QR code ; les signalements des voisins, urgents d'abord, avec description, photo et contact ; l'état et une note visible des voisins à mettre à jour ; le délai de déclaration à l'assurance pour les fuites et les dégradations |
 | **Copropriétaires** | Présentés étage par étage, comme sur le tableau d'interphone du hall : lots, mail ou courrier, grands caractères, aidant, retard éventuel |
 | **Documents** | Affiche du hall, fiche synthétique, plan de travaux, règlement en clair (import, relecture, validation), packs de bienvenue, dossier de vente, déclarations de meublés de tourisme, dossier de transfert vers un autre syndic |
 

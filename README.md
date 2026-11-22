@@ -32,6 +32,7 @@ Un assistant open source pour les syndics **bénévoles et coopératifs** de cop
 | **Dossier de vente** | Quand un lot est vendu : fiche synthétique, pré-état daté, plan de travaux et bordereau des documents exigés par la loi, en une archive pour le notaire | [Dossier de vente](docs/dossier-de-vente.md) |
 | **Changer de syndic** | Si la copropriété choisit un autre syndic, elle part avec tout : bordereau à signer (article 18-2), état des comptes, tableaux CSV, fiche complète et toutes les archives, en formats ouverts | [Transmission](docs/transmission.md) |
 | **Président de séance** | Outil gratuit pour le copropriétaire qui préside l'AG : émargement, pouvoirs, décompte des votes en tantièmes, majorités et passerelles, bilan à comparer avec le PV. Hors ligne, sans compte, rien ne quitte l'appareil | [Président de séance](docs/seance-president.md) |
+| **Signalements** | Un QR code dans le hall : les voisins signalent une panne, une fuite ou une dégradation, avec photo, sans compte. Le syndic suit, les voisins voient l'état ; descriptions et photos restent chez le syndic. Rappel du délai de déclaration à l'assurance | [Signalements](docs/signalements.md) |
 | **Pack papier** | Courrier, grands caractères, talon de chèque, bulletin papier, affiche du hall : personne n'est laissé de côté | [Pack papier](docs/pack-papier.md) |
 
 <table>

@@ -24,7 +24,7 @@ from decimal import Decimal
 from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -237,6 +237,7 @@ def tableau_de_bord(request: Request, copro: str):
         if al["niveau"] in ("urgent", "important") or len(a_faire) < 6:
             a_faire.append({"texte": al["titre"], "detail": al["message"],
                             "date": al.get("date"), "lien": None, "niveau": al["niveau"]})
+    a_faire.extend(A.signalements.taches(A.DOSSIER_DATA, copro, fiche, jour))
     for ext in TACHES_EXTENSIONS:
         a_faire.extend(ext(copro, fiche, jour))
     ordre = {"urgent": 0, "important": 1}
@@ -746,3 +747,80 @@ def documents_mt(request: Request, copro: str, lot: int = Form(...), recue_le: d
         return retour(f"/app/{copro}/documents#meubles", f"Déclaration refusée : {e}", request)
     return retour(f"/app/{copro}/documents#meubles", "Déclaration enregistrée. Le point d'information sera ajouté "
                   "à la prochaine AG que vous préparerez.", request)
+
+
+# --------------------------------------------------------------------------- #
+# Signalements des copropriétaires
+# --------------------------------------------------------------------------- #
+SID = re.compile(r"^S\d{14}[0-9a-f]{4}$")
+
+
+def _sid(sid: str) -> str:
+    if not SID.match(sid):
+        raise HTTPException(404, "Signalement inconnu")
+    return sid
+
+
+@routeur.get("/{copro}/signalements", response_class=HTMLResponse)
+def signalements_page(request: Request, copro: str, tous: int = 0):
+    exiger(request, copro)
+    S = A.signalements
+    fiche = A.fiche_de(copro)
+    donnees = S.charger(A.DOSSIER_DATA, copro)
+    liste = [x for x in donnees["signalements"] if tous or x["statut"] in S.OUVERTS]
+    rang = {"recu": 0, "en_cours": 1}
+    liste.sort(key=lambda x: (rang.get(x["statut"], 2), x["niveau"] != "urgent"))   # stable : plus récents d'abord
+    for x in liste:
+        x["limite_assurance"] = S.limite_declaration(fiche, x)
+    return page(request, "signalements.html", copro, liste=liste, tous=tous, lien=A.lien_signalement(copro),
+                categories=S.CATEGORIES, statuts=S.STATUTS, niveaux=S.NIVEAUX,
+                nb_fermes=sum(1 for x in donnees["signalements"] if x["statut"] not in S.OUVERTS),
+                astreintes=S.astreintes(fiche))
+
+
+@routeur.get("/{copro}/signalements/affiche.pdf")
+def signalements_affiche(request: Request, copro: str):
+    exiger(request, copro)
+    pdf = A.signalements.affiche(A.fiche_de(copro), A.lien_signalement(copro))
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="affiche_signalements_{copro}.pdf"',
+                             "Cache-Control": "no-store"})
+
+
+@routeur.post("/{copro}/signalements/lien")
+def signalements_nouveau_lien(request: Request, copro: str):
+    exiger(request, copro)
+    A.signalements.jeton(A.DOSSIER_DATA, copro, renouveler=True)
+    return retour(f"/app/{copro}/signalements", "Nouveau lien créé : l'ancien ne fonctionne plus. Imprimez la nouvelle "
+                  "affiche et remplacez celle du hall.", request)
+
+
+@routeur.post("/{copro}/signalements/{sid}")
+def signalements_maj(request: Request, copro: str, sid: str, statut: str = Form(...), note_publique: str = Form("")):
+    exiger(request, copro)
+    try:
+        A.signalements.mettre_a_jour(A.DOSSIER_DATA, copro, _sid(sid), statut, note_publique)
+    except KeyError:
+        raise HTTPException(404, "Signalement inconnu")
+    except A.signalements.SignalementInvalide as e:
+        return retour(f"/app/{copro}/signalements#{sid}", str(e), request)
+    return retour(f"/app/{copro}/signalements#{sid}", "Signalement mis à jour.", request)
+
+
+@routeur.post("/{copro}/signalements/{sid}/assurance")
+def signalements_assurance(request: Request, copro: str, sid: str):
+    exiger(request, copro)
+    try:
+        A.signalements.marquer_declare(A.DOSSIER_DATA, copro, _sid(sid))
+    except StopIteration:
+        raise HTTPException(404, "Signalement inconnu")
+    return retour(f"/app/{copro}/signalements#{sid}", "Déclaration à l'assurance notée.", request)
+
+
+@routeur.get("/{copro}/signalements/{sid}/photo.jpg")
+def signalements_photo(request: Request, copro: str, sid: str):
+    exiger(request, copro)
+    chemin = A.signalements.chemin_photo(A.DOSSIER_DATA, copro, _sid(sid))
+    if chemin is None:
+        raise HTTPException(404, "Pas de photo")
+    return FileResponse(chemin, media_type="image/jpeg", headers={"Cache-Control": "private, no-store"})

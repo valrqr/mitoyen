@@ -143,7 +143,7 @@ equipements:
 # -----------------------------------------------------------------------------
 contrats:
   - { id: CT01, objet: "Assurance multirisque immeuble",  prestataire: "Assureur Exemple",     montant_annuel: 4200, echeance: 2027-12-31, preavis_mois: 2, tacite_reconduction: true }
-  - { id: CT02, objet: "Maintenance ascenseur",           prestataire: "Ascenseurs Exemple",   montant_annuel: 2400, echeance: 2027-06-30, preavis_mois: 3, tacite_reconduction: true }
+  - { id: CT02, objet: "Maintenance ascenseur",           prestataire: "Ascenseurs Exemple",   montant_annuel: 2400, echeance: 2027-06-30, preavis_mois: 3, tacite_reconduction: true, telephone_astreinte: "01 99 00 12 34" }   # numéro réservé à la fiction (Arcep)
   - { id: CT03, objet: "Ménage des parties communes",     prestataire: "Propreté Exemple",     montant_annuel: 6000, echeance: 2027-09-30, preavis_mois: 1, tacite_reconduction: true }
   - { id: CT04, objet: "Entretien du jardin",             prestataire: "Jardins Exemple",      montant_annuel: 1500, echeance: 2027-03-31, preavis_mois: 1, tacite_reconduction: false }
 

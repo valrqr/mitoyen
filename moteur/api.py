@@ -77,6 +77,7 @@ Routes :
     GET  /copros/{copro}/ventes/{id}.zip                    archive du dossier, prête à transmettre au notaire
     POST /copros/{copro}/transmission                       dossier de transfert vers un autre syndic (ZIP, art. 18-2)
     GET  /vote/{copro}/{id}/{s}/{jeton}                     page de vote d'un copropriétaire (sans clé d'API)
+    GET  /signaler/{copro}/{jeton}                          signaler un problème (lien du QR code du hall, sans clé)
 
 Sécurité : chaque requête doit porter l'en-tête  X-API-Key: <MOTEUR_TOKEN>.
 Lancement local : uvicorn moteur.api:app --reload   (depuis la racine du projet)
@@ -119,9 +120,11 @@ import nouvel_arrivant  # noqa: E402
 import resume_ia  # noqa: E402
 import travaux  # noqa: E402
 import transmission  # noqa: E402
+import signalements  # noqa: E402
 import vote  # noqa: E402
 
 from . import page_vote  # noqa: E402
+from . import page_signalement  # noqa: E402
 
 DOSSIER_CONFIG = Path(os.getenv("MOTEUR_CONFIG_DIR", RACINE / "config"))
 DOSSIER_SORTIE = Path(os.getenv("MOTEUR_OUT_DIR", RACINE / "out"))
@@ -1312,6 +1315,61 @@ def creer_transmission(corps: CorpsTransmission, copro: str = Copro) -> FileResp
     except transmission.TransmissionInvalide as ex:
         raise HTTPException(422, str(ex))
     return FileResponse(r["chemin"], media_type="application/zip", filename=r["archive"])
+
+
+# --------------------------------------------------------------------------- #
+# Signalements des copropriétaires (lien secret de la copropriété, sans clé d'API)
+# --------------------------------------------------------------------------- #
+MAX_SIGNALEMENTS_PAR_JOUR = 30
+
+
+def lien_signalement(copro: str) -> str:
+    return f"{URL_PUBLIQUE}/signaler/{copro}/{signalements.jeton(DOSSIER_DATA, copro)}"
+
+
+def _page_signaler(copro: str, message: str | None = None, erreur: str | None = None, saisie: dict | None = None,
+                   statut: int = 200) -> HTMLResponse:
+    fiche = fiche_de(copro)
+    donnees = signalements.charger(DOSSIER_DATA, copro)
+    html = page_signalement.page_signaler(
+        fiche["copropriete"]["nom"], signalements.CATEGORIES, signalements.NIVEAUX,
+        signalements.URGENCES + signalements.astreintes(fiche), signalements.vue_publique(donnees),
+        message, erreur, saisie)
+    return HTMLResponse(html, status_code=statut, headers={"Cache-Control": "no-store"})
+
+
+@app.get("/signaler/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
+def page_signaler(copro: str = Copro, jeton: str = Jeton, envoye: int = 0):
+    if copro not in lister_copros() or not signalements.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return HTMLResponse(page_signalement.page_lien_invalide(), status_code=404)
+    return _page_signaler(copro, "Merci, votre signalement est arrivé chez le syndic." if envoye else None)
+
+
+@app.post("/signaler/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
+async def envoyer_signalement(copro: str = Copro, jeton: str = Jeton,
+                              categorie: str = Form("", max_length=20), niveau: str = Form("genant", max_length=10),
+                              lieu: str = Form("", max_length=400), description: str = Form("", max_length=6000),
+                              contact: str = Form("", max_length=400), site_web: str = Form("", max_length=200),
+                              photo: UploadFile | None = File(None)):
+    if copro not in lister_copros() or not signalements.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return HTMLResponse(page_signalement.page_lien_invalide(), status_code=404)
+    saisie = {"categorie": categorie, "niveau": niveau, "lieu": lieu, "description": description, "contact": contact}
+    if site_web:                                        # champ piège : rempli seulement par les robots
+        return Response(status_code=303, headers={"Location": f"/signaler/{copro}/{jeton}?envoye=1"})
+    aujourdhui_iso = date.today().isoformat()
+    du_jour = sum(1 for x in signalements.charger(DOSSIER_DATA, copro)["signalements"]
+                  if x["cree_le"].startswith(aujourdhui_iso))
+    if du_jour >= MAX_SIGNALEMENTS_PAR_JOUR:
+        return _page_signaler(copro, erreur="Trop de signalements aujourd’hui : réessayez demain ou prévenez le syndic "
+                                            "par sa boîte aux lettres.", saisie=saisie, statut=429)
+    contenu = None
+    if photo is not None and photo.filename:
+        contenu = await photo.read(signalements.TAILLE_MAX_PHOTO + 1)
+    try:
+        signalements.creer(DOSSIER_DATA, copro, categorie, lieu, description, niveau, contact, contenu or None)
+    except signalements.SignalementInvalide as e:
+        return _page_signaler(copro, erreur=str(e), saisie=saisie, statut=422)
+    return Response(status_code=303, headers={"Location": f"/signaler/{copro}/{jeton}?envoye=1"})
 
 
 @app.get("/vote/{copro}/{dossier_id}/{sid}/{jeton}", response_class=HTMLResponse, include_in_schema=False)

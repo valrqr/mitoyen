@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block contenu %}
+<h1>Signalements</h1>
+<p class="chapeau">Les copropriétaires signalent une panne, une fuite ou une dégradation depuis le QR code du hall.
+  Ils voient la liste et l'état de chaque signalement, mais pas les descriptions, les photos ni les contacts, qui restent ici.</p>
+
+<div class="formulaire" style="margin-bottom:1.6rem">
+  <h2 style="margin-top:0">Le lien de la copropriété</h2>
+  <p class="discret">À afficher dans le hall sous forme de QR code. Pas de compte à créer pour les voisins.</p>
+  <p><code style="word-break:break-all">{{ lien }}</code></p>
+  <div class="actions">
+    <a class="bouton" href="/app/{{ copro }}/signalements/affiche.pdf">Imprimer l'affiche du hall</a>
+    <form method="post" action="/app/{{ copro }}/signalements/lien">
+      <button class="secondaire" type="submit">Créer un nouveau lien</button></form>
+  </div>
+  <p class="discret" style="margin-top:.6rem">Un nouveau lien désactive l'ancien : utile si le lien a circulé hors de l'immeuble.
+    {% if not astreintes %}Les numéros d'astreinte de vos prestataires (ascensoriste, plombier) apparaissent sur l'affiche si vous
+    les ajoutez aux contrats de la fiche (champ « telephone_astreinte »).{% endif %}</p>
+</div>
+
+<h2>{% if tous %}Tous les signalements{% else %}En cours{% endif %}</h2>
+<p class="discret">{% if tous %}<a href="/app/{{ copro }}/signalements">N'afficher que les signalements en cours</a>
+  {% elif nb_fermes %}<a href="/app/{{ copro }}/signalements?tous=1">Afficher aussi les {{ nb_fermes }} signalement{{ "s" if nb_fermes > 1 }} réglé{{ "s" if nb_fermes > 1 }} ou sans suite</a>{% endif %}</p>
+
+{% if liste %}
+<div style="display:grid;gap:1rem">
+{% for x in liste %}
+<article class="formulaire" id="{{ x.id }}">
+  <div class="ligne" style="justify-content:space-between;align-items:baseline">
+    <h3 style="margin:0">{{ categories[x.categorie].libelle }}, {{ x.lieu }}</h3>
+    <span class="discret">{% if x.niveau == "urgent" %}<span class="erreur">Urgent</span> · {% endif %}signalé le {{ x.cree_le[:10]|date_fr }} à {{ x.cree_le[11:16] }}</span>
+  </div>
+  <p style="white-space:pre-line">{{ x.description }}</p>
+  {% if x.contact %}<p class="discret">Contact : {{ x.contact }}</p>{% endif %}
+  {% if x.photo %}<p><a href="/app/{{ copro }}/signalements/{{ x.id }}/photo.jpg"><img src="/app/{{ copro }}/signalements/{{ x.id }}/photo.jpg"
+     alt="Photo jointe au signalement" style="max-width:18rem;max-height:14rem;border-radius:var(--rayon);display:block"></a></p>{% endif %}
+  {% if x.limite_assurance %}
+    {% if x.declare_assurance %}<p class="discret">Déclaré à l'assurance le {{ x.declare_assurance[:10]|date_fr }}.</p>
+    {% else %}<div class="message" style="margin:.6rem 0">
+      <strong>À déclarer à l'assurance de l'immeuble avant le {{ x.limite_assurance|date_fr }}.</strong>
+      Au moins 5 jours ouvrés selon la loi ; vérifiez le délai de votre contrat.
+      <form method="post" action="/app/{{ copro }}/signalements/{{ x.id }}/assurance" style="display:inline">
+        <button class="secondaire" type="submit">C'est déclaré</button></form></div>{% endif %}
+  {% endif %}
+  <form method="post" action="/app/{{ copro }}/signalements/{{ x.id }}" class="ligne" style="margin-top:.6rem">
+    <label>État
+      <select name="statut">{% for k, v in statuts.items() %}<option value="{{ k }}" {% if x.statut == k %}selected{% endif %}>{{ v }}</option>{% endfor %}</select></label>
+    <label style="flex:1;min-width:16rem">Note visible des voisins (facultatif)
+      <input type="text" name="note_publique" maxlength="300" value="{{ x.note_publique }}" placeholder="Plombier prévenu, passage jeudi matin"></label>
+    <button type="submit">Enregistrer</button>
+  </form>
+</article>
+{% endfor %}
+</div>
+{% else %}<div class="vide">Aucun signalement en cours.</div>{% endif %}
+{% endblock %}

@@ -1217,7 +1217,7 @@ def test_interface_connexion_obligatoire():
 def test_interface_pages_et_actions():
     n = _navigateur()
     n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
-    for page in ("", "/impayes", "/appels", "/ag", "/travaux", "/plan", "/coproprietaires", "/documents"):
+    for page in ("", "/impayes", "/appels", "/ag", "/travaux", "/plan", "/signalements", "/coproprietaires", "/documents"):
         r = n.get(f"/app/mimosas{page}", params={"au": "2027-05-20"})
         assert r.status_code == 200, page
         assert 'aria-current="page"' in r.text
@@ -1440,3 +1440,75 @@ def test_transmission_vers_un_autre_syndic():
     assert n.get(lien).content[:2] == b"PK"
     assert n.get("/app/mimosas/transmission/20270101/autre.zip").status_code == 404
     assert _navigateur().get(lien, follow_redirects=False).status_code == 303
+
+
+# --------------------------------------------------------------------------- #
+# Signalements des copropriétaires
+# --------------------------------------------------------------------------- #
+def _session_syndic():
+    n = TestClient(app)
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    return n
+
+
+def test_signalements_du_hall_au_syndic():
+    import io
+    from PIL import Image
+    import signalements as S
+
+    n = _session_syndic()
+    page = n.get("/app/mimosas/signalements")
+    assert page.status_code == 200 and "/signaler/mimosas/" in page.text
+    lien = page.text.split("/signaler/mimosas/")[1].split("<")[0].strip()
+    publique = f"/signaler/mimosas/{lien}"
+
+    v = TestClient(app)                                   # un voisin, sans session ni clé
+    assert v.get("/signaler/mimosas/" + "x" * 22).status_code == 404
+    r = v.get(publique)
+    assert r.status_code == 200 and "0 800 47 33 33" in r.text and "01 99 00 12 34" in r.text
+    assert "Ne nommez personne" in r.text
+
+    # une photo avec des métadonnées : elles doivent disparaître
+    img = Image.new("RGB", (2400, 1800), "blue")
+    exif = Image.Exif(); exif[0x010F] = "Appareil-Test"
+    tampon = io.BytesIO(); img.save(tampon, "JPEG", exif=exif.tobytes())
+    r = v.post(publique, data={"categorie": "fuite", "niveau": "urgent", "lieu": "Cave B",
+                               "description": "De l'eau coule du plafond", "contact": "Appt 12"},
+               files={"photo": ("p.jpg", tampon.getvalue(), "image/jpeg")}, follow_redirects=False)
+    assert r.status_code == 303 and r.headers["location"].endswith("?envoye=1")
+    donnees = S.charger(Path(os.environ["MOTEUR_DATA_DIR"]), "mimosas")
+    s = donnees["signalements"][0]
+    photo = Path(os.environ["MOTEUR_DATA_DIR"]) / "mimosas" / "signalements" / s["photo"]
+    nettoyee = Image.open(photo)
+    assert max(nettoyee.size) == S.COTE_MAX_PHOTO and not nettoyee.getexif()
+
+    # les voisins voient la catégorie et le lieu, jamais la description ni le contact
+    r = v.get(publique)
+    assert "Cave B" in r.text and "coule du plafond" not in r.text and "Appt 12" not in r.text
+
+    # champ obligatoire manquant : message, saisie conservée
+    r = v.post(publique, data={"categorie": "acces", "lieu": "Porte du hall", "description": ""})
+    assert r.status_code == 422 and "Décrivez" in r.text and "Porte du hall" in r.text
+
+    # champ piège rempli (robot) : rien n'est créé
+    avant = len(S.charger(Path(os.environ["MOTEUR_DATA_DIR"]), "mimosas")["signalements"])
+    v.post(publique, data={"categorie": "autre", "lieu": "x", "description": "y", "site_web": "http://spam"})
+    assert len(S.charger(Path(os.environ["MOTEUR_DATA_DIR"]), "mimosas")["signalements"]) == avant
+
+    # côté syndic : tâche urgente, délai d'assurance, photo, mise à jour visible des voisins
+    tableau = n.get("/app/mimosas").text
+    assert "signalement urgent" in tableau and "Déclarer à l&#39;assurance" in tableau
+    syndic = n.get("/app/mimosas/signalements").text
+    assert "coule du plafond" in syndic and "Appt 12" in syndic and "assurance de l'immeuble avant le" in syndic
+    assert n.get(f"/app/mimosas/signalements/{s['id']}/photo.jpg").headers["content-type"] == "image/jpeg"
+    assert v.get(f"/app/mimosas/signalements/{s['id']}/photo.jpg", follow_redirects=False).status_code == 303
+    n.post(f"/app/mimosas/signalements/{s['id']}", data={"statut": "en_cours", "note_publique": "Plombier jeudi"})
+    n.post(f"/app/mimosas/signalements/{s['id']}/assurance")
+    assert "Plombier jeudi" in v.get(publique).text and "En cours" in v.get(publique).text
+    assert "Déclarer à l&#39;assurance" not in n.get("/app/mimosas").text
+
+    # affiche du hall, puis nouveau lien : l'ancien ne marche plus
+    pdf = n.get("/app/mimosas/signalements/affiche.pdf")
+    assert pdf.headers["content-type"] == "application/pdf" and pdf.content[:4] == b"%PDF"
+    n.post("/app/mimosas/signalements/lien")
+    assert v.get(publique).status_code == 404
