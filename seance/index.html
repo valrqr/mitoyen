@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Président de séance : compter les votes de l’AG – Mitoyen</title>
+<meta name="description" content="Outil gratuit pour le président de séance d’une assemblée générale de copropriété : émargement, décompte des votes en tantièmes, majorités des articles 24, 25 et 26. Fonctionne hors ligne, rien ne quitte l’appareil.">
+<meta name="theme-color" content="#1C1917">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icone.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icone-192.png">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.js"></script>
+</head>
+<body>
+<header class="barre">
+  <div class="marque">
+    <span class="mur" aria-hidden="true"></span>
+    <div>
+      <p class="marque-nom">Mitoyen</p>
+      <p class="marque-outil">Président de séance</p>
+    </div>
+  </div>
+  <nav class="etapes" aria-label="Étapes de la séance">
+    <button type="button" data-etape="preparer"><span class="num">1</span>Préparer</button>
+    <button type="button" data-etape="emargement"><span class="num">2</span>Émargement</button>
+    <button type="button" data-etape="votes"><span class="num">3</span>Votes</button>
+    <button type="button" data-etape="bilan"><span class="num">4</span>Bilan</button>
+  </nav>
+</header>
+
+<main id="vue" tabindex="-1"></main>
+
+<footer class="pied">
+  <p>Aide au calcul : seul le procès-verbal signé fait foi. Les données restent sur cet appareil, rien n’est envoyé.</p>
+  <p>Outil libre et gratuit, proposé par <a href="https://mitoyen.app">mitoyen.app</a>, l’outil des syndics bénévoles. Mitoyen ne fournit pas de conseil juridique : en cas de doute, adressez-vous à l’ADIL de votre département.</p>
+</footer>
+<noscript><p class="avertissement">Cet outil a besoin de JavaScript pour fonctionner.</p></noscript>
+</body>
+</html>
