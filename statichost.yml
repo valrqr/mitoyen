@@ -1,3 +1,6 @@
-# Publication de la vitrine mitoyen.app par statichost.eu
-# Pas de build : le dossier site/ est publié tel quel.
+# Publication de mitoyen.app par statichost.eu
+# La vitrine (site/) est publiée telle quelle ; l'outil de séance (seance/)
+# est recopié dans site/seance/ pour être servi à mitoyen.app/seance/.
+image: alpine:3.20
+command: cp -r seance site/seance && rm -f site/seance/statichost.yml
 public: site
