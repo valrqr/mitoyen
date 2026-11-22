@@ -1,0 +1,132 @@
+/* Vitrine mitoyen.app — repris de la maquette Framer (novembre 2026) */
+@font-face { font-family: "Barlow"; font-weight: 400; font-display: swap; src: url("/polices/barlow-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 600; font-display: swap; src: url("/polices/barlow-latin-600-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow"; font-weight: 700; font-display: swap; src: url("/polices/barlow-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Barlow Semi Condensed"; font-weight: 700; font-display: swap; src: url("/polices/barlow-semi-condensed-latin-700-normal.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 400; font-display: swap; src: url("/polices/atkinson-hyperlegible-latin-400-normal.woff2") format("woff2"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 700; font-display: swap; src: url("/polices/atkinson-hyperlegible-latin-700-normal.woff2") format("woff2"); }
+
+:root {
+  --encre: #1E1E1E; --papier: #FFFFFF; --pierre: #F1F2EF; --filet: #D4D4D4;
+  --gris: #5C5C5C; --alu: #E4E5E2; --orange: #C2410C;
+  --large: 1080px;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--papier); color: var(--gris); font: 400 17px/1.55 "Barlow", system-ui, sans-serif; letter-spacing: -0.02em; -webkit-font-smoothing: antialiased; }
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--encre); outline-offset: 3px; }
+.saut { position: absolute; left: -9999px; }
+.saut:focus { left: 16px; top: 16px; background: var(--papier); padding: 8px 12px; z-index: 10; }
+
+.cadre { width: 100%; max-width: var(--large); margin: 0 auto; padding: 0 24px; }
+section { padding: 96px 0; }
+section[id] { scroll-margin-top: 72px; }
+.pierre { background: var(--pierre); }
+.sombre { background: var(--encre); color: rgba(255,255,255,.72); }
+
+h1, h2 { font-family: "Barlow Semi Condensed", "Barlow", sans-serif; font-weight: 700; color: var(--encre); margin: 0; }
+h1 { font-size: 68px; line-height: 1; letter-spacing: -0.01em; }
+h2 { font-size: 42px; line-height: 1.08; letter-spacing: -0.005em; }
+h3 { font-size: 20px; line-height: 1.3; font-weight: 600; color: var(--encre); margin: 0; letter-spacing: -0.02em; }
+.sombre h2, .sombre h3 { color: var(--papier); }
+p { margin: 0; text-wrap: pretty; }
+.chapeau { font-size: 21px; line-height: 1.5; }
+.petit { font-size: 14px; line-height: 1.5; }
+.fort { font-weight: 600; color: var(--encre); line-height: 1.45; }
+
+/* Navigation */
+.nav { position: sticky; top: 0; z-index: 5; background: var(--papier); border-bottom: 1px solid var(--filet); }
+.nav .cadre { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+.logo { display: flex; align-items: center; gap: 10px; text-decoration: none; font: 700 24px/1 "Barlow Semi Condensed", sans-serif; color: var(--encre); letter-spacing: -0.01em; }
+.marque { width: 22px; height: 22px; border: 2px solid var(--encre); border-radius: 4px; background: linear-gradient(90deg, var(--encre) 50%, var(--alu) 50%); }
+.liens { display: flex; align-items: center; gap: 28px; }
+.liens a { font-size: 14px; text-decoration: none; }
+.liens a:hover { color: var(--encre); text-decoration: underline; }
+
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 14px 22px; border: 1.5px solid var(--encre); border-radius: 6px; font: 600 16px/1 "Barlow", sans-serif; letter-spacing: -0.02em; text-decoration: none; cursor: pointer; }
+.btn.plein { background: var(--encre); color: var(--papier); }
+.btn.vide { background: transparent; color: var(--encre); }
+.btn.clair { border-color: var(--papier); color: var(--papier); }
+.btn:hover { opacity: .88; }
+.liens .btn { padding: 10px 16px; font-size: 14px; color: var(--papier); }
+.liens .btn:hover { color: var(--papier); text-decoration: none; }
+
+/* Accroche */
+.accroche { padding: 88px 0 96px; }
+.accroche .cadre { display: grid; grid-template-columns: 1.45fr 1fr; gap: 56px; align-items: center; }
+.accroche p { margin-top: 24px; max-width: 560px; }
+.boutons { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+
+/* Interphone */
+.interphone { justify-self: end; width: 100%; max-width: 360px; padding: 28px 24px 24px; border: 2px solid var(--encre); border-radius: 10px; background: linear-gradient(180deg, #ECEDEA, var(--alu)); }
+.grille { display: grid; grid-template-columns: repeat(9, 8px); gap: 8px; justify-content: center; margin-bottom: 22px; }
+.grille span { width: 8px; height: 8px; border-radius: 50%; background: rgba(30,30,30,.7); }
+.sonnettes { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.sonnettes li { display: flex; align-items: center; gap: 14px; }
+.plaque { flex: 1; padding: 9px 12px; background: var(--papier); border: 1px solid #BEBEBC; border-radius: 4px; font: 600 15px/1 "Barlow", sans-serif; color: var(--encre); }
+.plaque.syndic { background: var(--encre); color: var(--papier); border-color: var(--encre); }
+.bouton-sonnette { width: 26px; height: 26px; flex: none; border: 2px solid var(--encre); border-radius: 50%; background: radial-gradient(50% 50% at 35% 35%, #FFF, #D9D9D6); }
+
+/* Principe */
+.entete { max-width: 640px; }
+.entete p { margin-top: 16px; }
+.partage { width: 100%; margin-top: 40px; border-collapse: collapse; border-top: 2px solid var(--encre); }
+.partage th, .partage td { text-align: left; vertical-align: top; padding: 16px 24px 16px 0; border-bottom: 1px solid var(--filet); width: 50%; }
+.partage th { font-weight: 600; color: var(--encre); }
+
+/* Fonctions */
+.fonctions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px 32px; margin-top: 40px; }
+.fonctions article { border-top: 2px solid var(--encre); padding-top: 18px; }
+.fonctions p { margin-top: 10px; }
+
+/* Papier */
+.papier .cadre { display: grid; grid-template-columns: 1.2fr 1fr; gap: 64px; align-items: center; }
+.papier .entete p + p { margin-top: 12px; }
+.courrier { background: var(--papier); border: 1px solid var(--filet); border-radius: 2px; padding: 32px; transform: rotate(1.2deg); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 6px 18px rgba(0,0,0,.06); font: 400 18px/1.5 "Atkinson Hyperlegible", sans-serif; color: var(--encre); letter-spacing: -0.02em; }
+.courrier .titre { font-weight: 700; font-size: 20px; line-height: 1.35; margin-bottom: 8px; }
+.courrier .montant { font-weight: 700; font-size: 44px; line-height: 1.1; color: var(--orange); margin: 10px 0 14px; font-variant-numeric: tabular-nums; }
+
+/* Libre */
+.trois { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; margin: 40px 0 36px; }
+.trois p { margin-top: 10px; }
+
+/* FAQ */
+.faq { max-width: 720px; margin-top: 32px; }
+.faq div { border-top: 1px solid var(--filet); padding: 22px 0; }
+.faq p { margin-top: 8px; }
+
+/* Liste d’intérêt */
+.liste .cadre { display: grid; grid-template-columns: 1.2fr 1fr; gap: 64px; align-items: start; }
+.carte { background: var(--papier); border: 1px solid var(--filet); border-radius: 8px; padding: 28px; }
+.carte .btn { width: 100%; margin: 18px 0 16px; }
+.carte .adresse { font: 600 18px/1.3 "Barlow", sans-serif; color: var(--encre); }
+
+/* Pied */
+footer { padding: 40px 0 48px; border-top: 1px solid var(--filet); }
+footer p + p { margin-top: 8px; }
+
+/* Mentions */
+.mentions { max-width: 760px; padding-top: 56px; padding-bottom: 96px; }
+.mentions h1 { font-size: 42px; line-height: 1.08; margin: 24px 0 10px; }
+.mentions h3 { margin: 40px 0 12px; }
+.mentions p + p { margin-top: 12px; }
+
+@media (max-width: 1199px) {
+  h1 { font-size: 56px; } h2 { font-size: 36px; } .chapeau { font-size: 19px; }
+}
+@media (max-width: 809px) {
+  h1 { font-size: 42px; } h2 { font-size: 30px; } .chapeau { font-size: 18px; }
+  section { padding: 64px 0; } .accroche { padding: 48px 0 64px; }
+  .liens a:not(.btn) { display: none; }
+  .accroche .cadre, .papier .cadre, .liste .cadre { grid-template-columns: 1fr; gap: 40px; }
+  .interphone { justify-self: stretch; max-width: none; }
+  .fonctions, .trois { grid-template-columns: 1fr; gap: 28px; }
+  .partage, .partage tbody, .partage tr, .partage th, .partage td { display: block; width: 100%; }
+  .partage thead { display: none; }
+  .partage tr { border-bottom: 1px solid var(--filet); padding: 14px 0; }
+  .partage td { border: 0; padding: 2px 0; }
+  .courrier { transform: none; padding: 24px; }
+  .mentions h1 { font-size: 34px; }
+}
