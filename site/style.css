@@ -169,3 +169,16 @@ footer p + p { margin-top: 8px; }
   .donnees { min-width: 0; font-size: 14px; }
   .donnees th:nth-child(3), .donnees td:nth-child(3) { display: none; }
 }
+
+/* Encart outil de séance */
+.outil-seance { padding: 0 0 88px; }
+.encart { display: grid; grid-template-columns: 1fr auto; gap: 40px; align-items: center; padding: 32px 36px; border: 2px solid var(--encre); border-radius: 10px; }
+.encart h2 { font-size: 32px; margin: 6px 0 12px; }
+.encart p { max-width: 640px; }
+.sur-titre { font-size: 14px; font-weight: 600; color: var(--encre); }
+@media (max-width: 809px) {
+  .outil-seance { padding-bottom: 64px; }
+  .encart { grid-template-columns: 1fr; gap: 20px; padding: 24px 20px; }
+  .encart h2 { font-size: 26px; }
+  .encart .btn { justify-self: start; }
+}
