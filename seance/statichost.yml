@@ -1,0 +1,3 @@
+# Publication de l’outil de séance (seance.mitoyen.app) par statichost.eu
+# Site statichost dont le « working directory » est seance/ : publié tel quel, sans build.
+public: .
