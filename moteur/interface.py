@@ -824,3 +824,167 @@ def signalements_photo(request: Request, copro: str, sid: str):
     if chemin is None:
         raise HTTPException(404, "Pas de photo")
     return FileResponse(chemin, media_type="image/jpeg", headers={"Cache-Control": "private, no-store"})
+
+
+# --------------------------------------------------------------------------- #
+# Comptabilité en partie double
+# --------------------------------------------------------------------------- #
+COMPTE = re.compile(r"^\d{2,4}(\.[A-Z0-9-]{1,30})?$")
+
+
+def _montant(texte: str | None) -> Decimal | None:
+    """Un montant saisi à la française, signe compris : « -1 234,50 » ; vide = None."""
+    if texte is None or not str(texte).strip():
+        return None
+    t = str(texte).replace(" ", "").replace(" ", "").replace(" ", "").replace("€", "").replace(",", ".")
+    try:
+        return Decimal(t)
+    except Exception:
+        raise A.compta.ComptaInvalide(f"Montant illisible : « {texte} »")
+
+
+def _comptes_charge() -> list[tuple[str, str]]:
+    return [(c, l) for c, l in A.compta.PLAN.items() if c.startswith("6")]
+
+
+def _balance_groupee(bal: dict) -> list[dict]:
+    """La balance par classe, chaque compte avec ses comptes auxiliaires (4501.CP03…) repliés dessous."""
+    C = A.compta
+    comptes: dict[str, dict] = {}
+    for c, v in bal.items():
+        racine = c.split(".")[0]
+        g = comptes.setdefault(racine, {"compte": racine, "libelle": C.libelle_compte(racine), "debit": C.ZERO,
+                                        "credit": C.ZERO, "aux": []})
+        g["debit"] += v["debit"]
+        g["credit"] += v["credit"]
+        if "." in c:
+            g["aux"].append({"compte": c, "libelle": c.split(".", 1)[1], **v})
+    classes: dict[str, dict] = {}
+    for racine in sorted(comptes):
+        g = comptes[racine]
+        g["solde"] = g["debit"] - g["credit"]
+        cl = classes.setdefault(racine[0], {"classe": racine[0], "libelle": C.CLASSES.get(racine[0], ""), "comptes": []})
+        cl["comptes"].append(g)
+    return list(classes.values())
+
+
+def _noms_aux(fiche: dict) -> dict:
+    """4501.CP03 -> « 4501 · Mme Rossi » : les comptes des copropriétaires par leur nom."""
+    return {c["id"]: c["nom"] for c in fiche["coproprietaires"]}
+
+
+@routeur.get("/{copro}/comptes", response_class=HTMLResponse)
+def comptes_page(request: Request, copro: str):
+    exiger(request, copro)
+    C = A.compta
+    jour = aujourdhui(request)
+    fiche = A.fiche_de(copro)
+    st = C.charger(A.DOSSIER_DATA, copro)
+    e = C.etat(fiche, A.DOSSIER_SORTIE, A.DOSSIER_DATA, copro, jour)
+    reglees = {a.get("facture") for a in st["depenses"].values() if a.get("facture")}
+    a_affecter, recettes = [], []
+    for x in e["journal"]:
+        if x["source"] != "attente":
+            continue
+        banque = next(l for l in x["lignes"] if l["compte"] == "512")
+        ligne = {"id": x["piece"], "date": x["date"], "libelle": x["libelle"], "montant": banque["debit"] - banque["credit"]}
+        (a_affecter if ligne["montant"] < 0 else recettes).append(ligne)
+    bal = e["balance"]
+    total_d = sum((v["debit"] for v in bal.values()), C.ZERO)
+    total_c = sum((v["credit"] for v in bal.values()), C.ZERO)
+    factures = sorted(st["factures"], key=lambda f: f["date"], reverse=True)
+    for f in factures:
+        f["reglee"] = f["id"] in reglees
+    noms = _noms_aux(fiche)
+    for cl in (classes := _balance_groupee(bal)):
+        for g in cl["comptes"]:
+            for a in g["aux"]:
+                a["libelle"] = noms.get(a["libelle"], a["libelle"].replace("-", " ").title())
+    controles = [{**c, "detail": re.sub(r"-?\d+\.\d{2}", lambda m: euros(m.group()), c["detail"])}
+                 for c in e["controles"]]
+    return page(request, "comptes.html", copro, e=e, controles=controles, ouverture=st["ouverture"],
+                factures=factures, a_affecter=a_affecter, recettes=recettes, classes=classes,
+                total_debit=total_d, total_credit=total_c, comptes_charge=_comptes_charge(),
+                factures_ouvertes=[f for f in factures if not f["reglee"]],
+                coproprietaires=sorted(fiche["coproprietaires"], key=lambda c: c["nom"]),
+                ouverture_ok=st["ouverture"] is not None, tout_ok=all(c["ok"] for c in e["controles"]))
+
+
+@routeur.post("/{copro}/comptes/ouverture")
+async def comptes_ouverture(request: Request, copro: str):
+    exiger(request, copro)
+    fiche = A.fiche_de(copro)
+    f = await request.form()
+    try:
+        jour = date.fromisoformat(str(f.get("date", "")))
+    except ValueError:
+        return retour(f"/app/{copro}/comptes#ouverture", "Soldes non enregistrés : indiquez la date de reprise.", request)
+    try:
+        soldes = {c["id"]: _montant(f.get(f"solde_{c['id']}")) or 0 for c in fiche["coproprietaires"]}
+        fournisseurs = {}
+        for ligne in str(f.get("fournisseurs", "")).splitlines():
+            if ligne.strip():
+                nom, _, m = ligne.rpartition(";")
+                if not nom.strip():
+                    raise A.compta.ComptaInvalide(f"Ligne fournisseur illisible : « {ligne.strip()} » (attendu : Nom ; montant)")
+                fournisseurs[nom.strip()] = _montant(m) or 0
+        A.compta.definir_ouverture(A.DOSSIER_DATA, copro, jour, _montant(f.get("banque")) or 0, soldes,
+                                   _montant(f.get("fonds_travaux")) or 0, fournisseurs)
+    except A.compta.ComptaInvalide as e:
+        return retour(f"/app/{copro}/comptes#ouverture", f"Soldes non enregistrés : {e}", request)
+    return retour(f"/app/{copro}/comptes", "Soldes d'ouverture enregistrés.", request)
+
+
+@routeur.post("/{copro}/comptes/factures")
+def comptes_facture(request: Request, copro: str, fournisseur: str = Form(...), jour: date = Form(..., alias="date"),
+                    montant: str = Form(...), compte: str = Form(...), libelle: str = Form("")):
+    exiger(request, copro)
+    try:
+        f = A.compta.ajouter_facture(A.DOSSIER_DATA, copro, fournisseur, jour, _montant(montant) or 0, compte,
+                                     libelle or A.compta.libelle_compte(compte))
+    except A.compta.ComptaInvalide as e:
+        return retour(f"/app/{copro}/comptes#factures", f"Facture non enregistrée : {e}", request)
+    return retour(f"/app/{copro}/comptes#factures", f"Facture {f['id']} enregistrée : {euros(f['montant'])} "
+                  f"chez {f['fournisseur']}.", request)
+
+
+@routeur.post("/{copro}/comptes/depenses/{op_id}", response_class=HTMLResponse)
+def comptes_affecter(request: Request, copro: str, op_id: str, choix: str = Form(...), fournisseur: str = Form("")):
+    exiger(request, copro)
+    if not re.fullmatch(r"[A-Za-z0-9_-]{1,64}", op_id):
+        raise HTTPException(404)
+    C = A.compta
+    try:
+        if choix.startswith("facture:"):
+            fid = choix.split(":", 1)[1]
+            fac = next((f for f in C.charger(A.DOSSIER_DATA, copro)["factures"] if f["id"] == fid), None)
+            if fac is None:
+                raise C.ComptaInvalide("Facture inconnue")
+            C.affecter_depense(A.DOSSIER_DATA, copro, op_id, facture=fid)
+            texte = f"Rattaché à la facture {fid} ({fac['fournisseur']})."
+        elif choix.startswith("compte:"):
+            cpt = choix.split(":", 1)[1]
+            C.affecter_depense(A.DOSSIER_DATA, copro, op_id, compte=cpt, fournisseur=fournisseur)
+            texte = f"Dépense directe : {cpt} {C.libelle_compte(cpt)}."
+        else:
+            raise C.ComptaInvalide("Choisissez une facture ou un compte de charge")
+    except C.ComptaInvalide as e:
+        return HTMLResponse(f'<tr><td colspan="4" class="erreur">{e}</td></tr>')
+    return templates.TemplateResponse(request, "_ligne_faite.html", {"texte": texte, "colonnes": 4,
+                                                                     "copro": copro, "op_id": op_id})
+
+
+@routeur.get("/{copro}/comptes/compte/{compte}", response_class=HTMLResponse)
+def comptes_grand_livre(request: Request, copro: str, compte: str):
+    exiger(request, copro)
+    if not COMPTE.match(compte):
+        raise HTTPException(404, "Compte inconnu")
+    C = A.compta
+    fiche = A.fiche_de(copro)
+    e = C.etat(fiche, A.DOSSIER_SORTIE, A.DOSSIER_DATA, copro, aujourdhui(request))
+    mouvements = C.grand_livre(e["journal"], compte)
+    racine, _, aux = compte.partition(".")
+    nom = _noms_aux(fiche).get(aux, aux.replace("-", " ").title()) if aux else ""
+    return page(request, "grand_livre.html", copro, onglet="comptes", compte=compte,
+                libelle=C.libelle_compte(racine) + (f" — {nom}" if nom else ""), mouvements=mouvements,
+                solde=mouvements[-1]["solde"] if mouvements else C.ZERO, au=e["au"])

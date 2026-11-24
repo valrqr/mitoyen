@@ -232,6 +232,7 @@ def journal(fiche: dict, sources: dict) -> list[dict]:
     "factures", "depenses"} — le journal complet, trié par date."""
     E = []
     o = sources.get("ouverture")
+    debut = o["date"] if o else ""       # ce qui précède la reprise est déjà dans les soldes d'ouverture
     if o:
         lignes = [("512", _d(o["banque"]), ZERO) if _d(o["banque"]) >= 0 else ("512", ZERO, -_d(o["banque"]))]
         for cid, s in o["coproprietaires"].items():
@@ -246,7 +247,7 @@ def journal(fiche: dict, sources: dict) -> list[dict]:
         E.append(_ecriture(o["date"], "Soldes d'ouverture", "AN", lignes, "ouverture"))
 
     for e in sources.get("dues", []):
-        if e["type"] != "appel":
+        if e["type"] != "appel" or e["date"] < debut:
             continue
         lignes = []
         for x in e["detail"]:
@@ -256,7 +257,7 @@ def journal(fiche: dict, sources: dict) -> list[dict]:
 
     for a in sources.get("ajustements", []):
         m = _d(a["montant"])
-        if a["nature"] == "solde_anterieur":
+        if a["nature"] == "solde_anterieur" or a["date"] < debut:
             continue                          # repris par les soldes d'ouverture
         cpt, contre = AJUSTEMENTS["avoir" if m < 0 else a["nature"]]
         t = tiers(cpt, a["coproprietaire"])
@@ -265,6 +266,8 @@ def journal(fiche: dict, sources: dict) -> list[dict]:
 
     factures = {f["id"]: f for f in sources.get("factures", [])}
     for f in factures.values():
+        if f["date"] < debut:
+            continue                          # une facture antérieure non payée se reprend en fournisseur
         m = _d(f["montant"])
         E.append(_ecriture(f["date"], f"{f['fournisseur']} — {f['libelle']}", f["id"],
                            [(f["compte"], m, ZERO), (tiers("401", f["fournisseur"]), ZERO, m)], "facture"))
@@ -272,6 +275,8 @@ def journal(fiche: dict, sources: dict) -> list[dict]:
     rap = {r["operation"]: r for r in sources.get("rapprochement", [])}
     dep = sources.get("depenses", {})
     for op in sources.get("operations", []):
+        if op["date"] < debut:
+            continue
         m = _d(op["montant"])
         r = rap.get(op["id"], {})
         piece = op["id"]
@@ -331,7 +336,9 @@ def controles(E: list[dict], operations: list[dict], ouverture: dict | None) -> 
     td = sum((v["debit"] for v in b.values()), ZERO)
     tc = sum((v["credit"] for v in b.values()), ZERO)
     res.append({"controle": "Total des débits = total des crédits", "ok": td == tc, "detail": f"{td} / {tc}"})
-    banque_releve = (_d(ouverture["banque"]) if ouverture else ZERO) + sum((_d(o["montant"]) for o in operations), ZERO)
+    debut = ouverture["date"] if ouverture else ""
+    banque_releve = (_d(ouverture["banque"]) if ouverture else ZERO) + sum(
+        (_d(o["montant"]) for o in operations if o["date"] >= debut), ZERO)
     banque_compta = b.get("512", {}).get("solde", ZERO)
     res.append({"controle": "Compte 512 = solde du relevé", "ok": banque_compta == banque_releve,
                 "detail": f"{banque_compta} / {banque_releve}"})

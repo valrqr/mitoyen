@@ -17,11 +17,12 @@
     {% if copro %}
     <nav aria-label="Rubriques">
       {% set rubriques = [("tableau", "", "Tableau de bord"), ("impayes", "/impayes", "Impayés"),
-                          ("appels", "/appels", "Appels de fonds"), ("ag", "/ag", "Assemblées générales"),
+                          ("appels", "/appels", "Appels de fonds"), ("comptes", "/comptes", "Comptabilité"),
+                          ("ag", "/ag", "Assemblées générales"),
                           ("travaux", "/travaux", "Travaux"), ("plan", "/plan", "Plan de travaux"),
                           ("signalements", "/signalements", "Signalements"),
                           ("coproprietaires", "/coproprietaires", "Copropriétaires"), ("documents", "/documents", "Documents")] %}
-      {% set rubriques = rubriques[:7] + rubriques_extensions + rubriques[7:] %}
+      {% set rubriques = rubriques[:8] + rubriques_extensions + rubriques[8:] %}
       {% for cle, chemin, libelle in rubriques %}
       <a href="/app/{{ copro }}{{ chemin }}" {% if onglet == cle %}aria-current="page"{% endif %}>{{ libelle }}</a>
       {% endfor %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titre %}Compte {{ compte }}{% endblock %}
+{% block contenu %}
+<p><a href="/app/{{ copro }}/comptes#balance">← Retour à la balance</a></p>
+<h1>Compte {{ compte }}</h1>
+<p class="chapeau">{{ libelle }}. Tous les mouvements jusqu'au {{ au|date_fr }}.</p>
+{% if mouvements %}
+<table class="table">
+  <thead><tr><th>Date</th><th>Pièce</th><th>Libellé</th><th class="nombre">Débit</th><th class="nombre">Crédit</th><th class="nombre">Solde</th></tr></thead>
+  <tbody>
+    {% for m in mouvements %}
+    <tr>
+      <td class="nombre">{{ m.date|date_fr }}</td>
+      <td>{{ m.piece }}</td>
+      <td>{{ m.libelle }}{% if m.compte != compte %}<br><span class="discret">{{ m.compte }}</span>{% endif %}</td>
+      <td class="nombre">{{ m.debit|euros if m.debit else "" }}</td>
+      <td class="nombre">{{ m.credit|euros if m.credit else "" }}</td>
+      <td class="nombre">{{ m.solde|euros }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  <tfoot><tr><th colspan="5">Solde au {{ au|date_fr }}</th><th class="nombre">{{ solde|euros }}</th></tr></tfoot>
+</table>
+{% else %}<div class="vide">Aucun mouvement sur ce compte.</div>{% endif %}
+{% endblock %}

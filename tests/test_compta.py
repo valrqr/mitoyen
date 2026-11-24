@@ -87,3 +87,23 @@ def test_etat_sur_donnees_vides(tmp_path):
     e = compta.etat(FICHE, tmp_path / "out", tmp_path / "data", "mimosas", date(2027, 3, 1))
     assert e["journal"] == [] and e["balance"] == {}
     assert any(c["controle"] == "Soldes d'ouverture saisis" and not c["ok"] for c in e["controles"])
+
+
+def test_avant_la_reprise_rien_ne_compte_deux_fois(tmp_path):
+    """Ce qui précède la date de reprise est déjà dans les soldes d'ouverture : ni le relevé, ni les appels,
+    ni les factures antérieurs ne doivent être comptés une seconde fois."""
+    compta.definir_ouverture(tmp_path, "m", date(2027, 1, 1), banque="1000", fonds_travaux="0",
+                             soldes_coproprietaires={"CP01": "1000"})
+    compta.ajouter_facture(tmp_path, "m", "Ancien fournisseur", date(2026, 12, 15), "90", "615", "Antérieure")
+    st = compta.charger(tmp_path, "m")
+    ops = [{"id": "OP0", "date": "2026-12-28", "libelle": "VIR ANTERIEUR", "montant": "250.00"},
+           {"id": "OP1", "date": "2027-01-05", "libelle": "VIR CP01", "montant": "100.00"}]
+    dues = [{"id": "2026-T4-CP01", "coproprietaire": "CP01", "type": "appel", "libelle": "Appel T4", "date": "2026-10-01",
+             "detail": [{"rubrique": "budget:generales", "montant": D("300")}]}]
+    E = compta.journal(FICHE, {"ouverture": st["ouverture"], "dues": dues, "ajustements": [], "operations": ops,
+                               "rapprochement": [], "factures": st["factures"], "depenses": {}})
+    assert {e["piece"] for e in E} == {"AN", "OP1"}
+    b = compta.balance(E)
+    assert b["512"]["solde"] == D("1100.00")
+    ok = {c["controle"]: c["ok"] for c in compta.controles(E, ops, st["ouverture"])}
+    assert ok["Compte 512 = solde du relevé"]

@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block titre %}Comptabilité{% endblock %}
+{% block contenu %}
+<h1>Comptabilité</h1>
+<p class="chapeau">Les comptes se tiennent tout seuls à partir de ce que Mitoyen connaît déjà : appels de fonds, paiements rapprochés, relevé bancaire. Il vous reste à saisir les factures et à expliquer les dépenses du relevé.</p>
+
+{% set banque = e.balance.get("512") %}
+{% set ft = e.balance.get("105") %}
+<div class="colonnes">
+  <div>
+    <h2 id="controles">Avant d'arrêter les comptes</h2>
+    <ul class="controles">
+      {% for c in controles %}
+      <li class="{{ 'ok' if c.ok else 'ko' }}">
+        <span class="marque-controle" aria-hidden="true">{{ "✓" if c.ok else "!" }}</span>
+        <span><strong>{{ c.controle }}</strong><br><span class="discret">{{ c.detail }}</span></span>
+        <span class="visuellement-cache">{{ "vérifié" if c.ok else "à régler" }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% if tout_ok %}<p class="discret">Tout est en ordre au {{ e.au|date_fr }} : les comptes peuvent être présentés.</p>{% endif %}
+  </div>
+  <aside class="chiffres">
+    <div class="chiffre neutre"><span>Banque (compte 512)</span><b>{{ (banque.solde if banque else 0)|euros }}</b>
+      <small>au {{ e.au|date_fr }}</small></div>
+    <div class="chiffre neutre"><span>Fonds de travaux (compte 105)</span><b>{{ (-(ft.solde) if ft else 0)|euros }}</b></div>
+    <div class="chiffre{{ ' neutre' if not a_affecter }}"><span>Dépenses à expliquer</span><b>{{ a_affecter|length }}</b>
+      <small>{{ "Rien en attente" if not a_affecter else "dans le compte d'attente 471" }}</small></div>
+  </aside>
+</div>
+
+<h2 id="ouverture">Soldes d'ouverture</h2>
+{% if ouverture %}
+<p>Comptes repris le {{ ouverture.date|date_fr }} : banque {{ ouverture.banque|euros }}, fonds de travaux {{ ouverture.fonds_travaux|euros }},
+  {{ ouverture.coproprietaires|length }} compte{{ "s" if ouverture.coproprietaires|length > 1 }} de copropriétaire non soldé{{ "s" if ouverture.coproprietaires|length > 1 }}.</p>
+<details class="replie"><summary>Corriger les soldes d'ouverture</summary>
+{% else %}
+<p class="discret">À saisir une fois, au premier jour de la tenue des comptes dans Mitoyen : les montants viennent du dernier exercice approuvé ou de l'état remis par l'ancien syndic. Les opérations antérieures à cette date sont déjà dans ces soldes : Mitoyen ne les compte pas une seconde fois.</p>
+{% endif %}
+<form class="formulaire" method="post" action="/app/{{ copro }}/comptes/ouverture">
+  <div class="champs">
+    <label>Premier jour tenu dans Mitoyen <input type="date" name="date" required value="{{ ouverture.date if ouverture else '' }}"></label>
+    <label>Solde du compte bancaire <input name="banque" inputmode="decimal" placeholder="0,00" value="{{ ouverture.banque if ouverture else '' }}"></label>
+    <label>Fonds de travaux <input name="fonds_travaux" inputmode="decimal" placeholder="0,00" value="{{ ouverture.fonds_travaux if ouverture else '' }}"></label>
+  </div>
+  <fieldset class="soldes-copro">
+    <legend>Compte de chaque copropriétaire : positif s'il doit de l'argent, négatif s'il a payé d'avance, vide s'il est à jour</legend>
+    {% for c in coproprietaires %}
+    <label>{{ c.nom }} <input name="solde_{{ c.id }}" inputmode="decimal" placeholder="0,00"
+      value="{{ ouverture.coproprietaires.get(c.id, '') if ouverture else '' }}"></label>
+    {% endfor %}
+  </fieldset>
+  <label>Factures fournisseurs restant à payer, une par ligne (facultatif)
+    <textarea name="fournisseurs" rows="2" placeholder="Ascenseurs Exemple ; 420,00">{% if ouverture %}{% for n, m in ouverture.fournisseurs.items() %}{{ n }} ; {{ m }}
+{% endfor %}{% endif %}</textarea></label>
+  <div><button type="submit">Enregistrer les soldes d'ouverture</button>
+    <span class="discret">Si les soldes ne s'équilibrent pas, l'écart va au compte d'attente, pour être expliqué plutôt que caché.</span></div>
+</form>
+{% if ouverture %}</details>{% endif %}
+
+<h2 id="depenses">Dépenses du relevé à expliquer</h2>
+{% if a_affecter %}
+<p class="discret">Pour chaque débit, dites ce qu'il paie : une facture saisie, ou une petite dépense réglée directement (frais bancaires, fournitures).</p>
+<table class="table">
+  <thead><tr><th>Date</th><th>Libellé du relevé</th><th class="nombre">Montant</th><th>Ce que ça paie</th></tr></thead>
+  <tbody>
+    {% for o in a_affecter %}
+    <tr>
+      <td class="nombre">{{ o.date|date_fr }}</td>
+      <td>{{ o.libelle }}</td>
+      <td class="nombre"><strong>{{ (-o.montant)|euros }}</strong></td>
+      <td>
+        <form class="decision" hx-post="/app/{{ copro }}/comptes/depenses/{{ o.id }}" hx-target="closest tr" hx-swap="outerHTML">
+          <label class="visuellement-cache" for="dep-{{ o.id }}">Ce que paie ce débit</label>
+          <select name="choix" id="dep-{{ o.id }}" required>
+            <option value="">Choisir…</option>
+            {% if factures_ouvertes %}<optgroup label="Facture à régler">
+              {% for f in factures_ouvertes %}<option value="facture:{{ f.id }}">{{ f.fournisseur }}, {{ f.montant|euros }} ({{ f.date|date_fr }})</option>{% endfor %}
+            </optgroup>{% endif %}
+            <optgroup label="Dépense directe">
+              {% for c, l in comptes_charge %}<option value="compte:{{ c }}">{{ c }} · {{ l }}</option>{% endfor %}
+            </optgroup>
+          </select>
+          <button type="submit">Enregistrer</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}<div class="vide">Chaque débit du relevé est expliqué.</div>{% endif %}
+{% if recettes %}
+<p class="discret">{{ recettes|length }} encaissement{{ "s" if recettes|length > 1 }} du relevé ne {{ "sont" if recettes|length > 1 else "est" }} rattaché{{ "s" if recettes|length > 1 }} à aucun copropriétaire : ça se règle dans <a href="/app/{{ copro }}/impayes#a-confirmer">Impayés</a>.</p>
+{% endif %}
+
+<h2 id="factures">Factures</h2>
+<form class="formulaire" method="post" action="/app/{{ copro }}/comptes/factures">
+  <div class="champs">
+    <label>Fournisseur <input name="fournisseur" required maxlength="60" placeholder="Ascenseurs Exemple"></label>
+    <label>Date de la facture <input type="date" name="date" required value="{{ jour.isoformat() }}"></label>
+    <label>Montant TTC <input name="montant" inputmode="decimal" required placeholder="0,00"></label>
+  </div>
+  <div class="champs">
+    <label>Nature de la charge
+      <select name="compte" required>
+        {% for c, l in comptes_charge %}<option value="{{ c }}">{{ c }} · {{ l }}</option>{% endfor %}
+      </select></label>
+    <label>Libellé (facultatif) <input name="libelle" maxlength="120" placeholder="Entretien trimestriel"></label>
+  </div>
+  <div><button type="submit">Enregistrer la facture</button>
+    <span class="discret">La charge compte à la date de la facture, payée ou non.</span></div>
+</form>
+{% if factures %}
+<table class="table">
+  <thead><tr><th>Date</th><th>Fournisseur</th><th>Nature</th><th class="nombre">Montant</th><th>Réglée</th></tr></thead>
+  <tbody>
+    {% for f in factures %}
+    <tr>
+      <td class="nombre">{{ f.date|date_fr }}</td>
+      <td>{{ f.fournisseur }}<br><span class="discret">{{ f.id }} · {{ f.libelle }}</span></td>
+      <td>{{ f.compte }}</td>
+      <td class="nombre">{{ f.montant|euros }}</td>
+      <td>{% if f.reglee %}Oui{% else %}<span class="fort">Pas encore</span>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2 id="balance">Balance au {{ e.au|date_fr }}</h2>
+{% if classes %}
+<table class="table balance">
+  <thead><tr><th>Compte</th><th class="nombre">Débit</th><th class="nombre">Crédit</th><th class="nombre">Solde</th></tr></thead>
+  {% for cl in classes %}
+  <tbody>
+    <tr class="classe"><th colspan="4">Classe {{ cl.classe }} · {{ cl.libelle }}</th></tr>
+    {% for g in cl.comptes %}
+    <tr>
+      <td><a href="/app/{{ copro }}/comptes/compte/{{ g.compte }}">{{ g.compte }}</a> {{ g.libelle }}
+        {% if g.aux %}<details class="aux"><summary>{{ g.aux|length }} compte{{ "s" if g.aux|length > 1 }} détaillé{{ "s" if g.aux|length > 1 }}</summary>
+          <ul>{% for a in g.aux %}<li><a href="/app/{{ copro }}/comptes/compte/{{ a.compte }}">{{ a.libelle }}</a> <span class="discret">{{ a.solde|euros }}</span></li>{% endfor %}</ul>
+        </details>{% endif %}</td>
+      <td class="nombre">{{ g.debit|euros }}</td>
+      <td class="nombre">{{ g.credit|euros }}</td>
+      <td class="nombre">{{ g.solde|euros }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+  {% endfor %}
+  <tfoot><tr><th>Total</th><th class="nombre">{{ total_debit|euros }}</th><th class="nombre">{{ total_credit|euros }}</th><th></th></tr></tfoot>
+</table>
+<p class="discret">Solde positif : le compte doit (débiteur). Négatif : il est dû (créditeur). Cliquez un compte pour voir ses mouvements.</p>
+{% else %}<div class="vide">Pas encore d'écriture : saisissez les soldes d'ouverture ou importez un relevé.</div>{% endif %}
+
+<p class="discret">Aide à la gestion, pas un conseil comptable. Le plan comptable suit l'arrêté du 14 mars 2005 ; avant un usage réel, comparez-le au texte en vigueur sur Légifrance. L'ADIL de votre département renseigne gratuitement.</p>
+{% endblock %}

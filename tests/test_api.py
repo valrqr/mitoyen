@@ -1512,3 +1512,48 @@ def test_signalements_du_hall_au_syndic():
     assert pdf.headers["content-type"] == "application/pdf" and pdf.content[:4] == b"%PDF"
     n.post("/app/mimosas/signalements/lien")
     assert v.get(publique).status_code == 404
+
+
+def test_interface_comptabilite():
+    import re as _re
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    n.get("/app/mimosas", params={"au": "2027-05-20"})
+    r = n.get("/app/mimosas/comptes")
+    assert r.status_code == 200 and 'aria-current="page"' in r.text and "Soldes d'ouverture" in r.text
+    # Le relevé fictif : ses débits arrivent au compte d'attente, à expliquer
+    releve = Path(__file__).resolve().parent.parent / "exemples" / "banque" / "releve_mimosas_2027.csv"
+    n.post("/app/mimosas/impayes/releve", files={"fichier": ("releve.csv", releve.read_bytes(), "text/csv")})
+    t = n.get("/app/mimosas/comptes").text
+    assert "Dépenses du relevé à expliquer" in t and "Compte 512 = solde du relevé" in t
+    # Soldes d'ouverture : montants à la française, un copropriétaire débiteur, un fournisseur
+    r = n.post("/app/mimosas/comptes/ouverture", data={"date": "2026-12-31", "banque": "12 480,50", "fonds_travaux": "8 200",
+                                                      "solde_CP03": "150,00", "fournisseurs": "Ascenseurs Exemple ; 420,00"},
+               follow_redirects=False)
+    assert r.status_code == 303
+    t = n.get("/app/mimosas/comptes").text
+    assert "ouverture enregistrés" in t and "480,50" in t and "Corriger les soldes d'ouverture" in t
+    # Montant illisible : message clair, rien d'enregistré à tort
+    t = n.post("/app/mimosas/comptes/ouverture", data={"date": "2026-12-31", "banque": "douze"}).text
+    assert "Montant illisible" in t
+    # Une facture, puis un débit du relevé rattaché à elle
+    t = n.post("/app/mimosas/comptes/factures", data={"fournisseur": "Ascenseurs Exemple", "date": "2027-02-10",
+                                                      "montant": "312,40", "compte": "614", "libelle": "Maintenance T1"}).text
+    assert "Facture F0001 enregistrée" in t and "Pas encore" in t
+    assert "Facture non enregistrée" in n.post("/app/mimosas/comptes/factures", data={
+        "fournisseur": "X", "date": "2027-02-10", "montant": "-5", "compte": "614"}).text
+    ops = _re.findall(r'/comptes/depenses/([A-Za-z0-9_-]+)"', t)
+    assert ops
+    r = n.post(f"/app/mimosas/comptes/depenses/{ops[0]}", data={"choix": "facture:F0001"})
+    assert "Rattaché à la facture F0001" in r.text
+    r = n.post(f"/app/mimosas/comptes/depenses/{ops[1]}", data={"choix": "compte:66"})
+    assert "Dépense directe : 66" in r.text
+    assert "erreur" in n.post(f"/app/mimosas/comptes/depenses/{ops[2]}", data={"choix": "compte:512"}).text
+    t = n.get("/app/mimosas/comptes").text
+    assert t.count("/comptes/depenses/") == len(ops) - 2
+    # La balance tombe juste, et chaque compte ouvre son grand livre
+    assert "Total des débits = total des crédits" in t and "Balance au" in t
+    g = n.get("/app/mimosas/comptes/compte/512")
+    assert g.status_code == 200 and "ouverture" in g.text and "<td>AN</td>" in g.text
+    assert n.get("/app/mimosas/comptes/compte/4501.CP03").status_code == 200
+    assert n.get("/app/mimosas/comptes/compte/..%2F..").status_code == 404
