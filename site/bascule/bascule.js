@@ -243,7 +243,7 @@ function kit(d) {
       (eco > 0 ? "Sans honoraires, il ne resterait que les frais réels, et la copropriété économiserait environ " : "Sans honoraires, il ne resterait que les frais réels."),
       eco > 0 ? h("strong", null, eurosRond(eco) + " par an") : null, eco > 0 ? "." : null),
     h("p", null, "Ce n’est pas un saut dans l’inconnu : la loi le prévoit, l’assemblée garde toutes ses décisions et l’argent reste sur le compte de la copropriété. Vous trouverez ci-dessous le détail des chiffres et, au verso, les réponses aux questions que vous vous posez sans doute."),
-    h("p", null, maj(je.sujet) + " " + je.reste + " à votre disposition pour en discuter, dans le hall ou autour d’un café" +
+    h("p", null, maj(je.sujet) + " " + je.reste + " à votre disposition pour en discuter" +
       (d.contact ? " (" + d.contact + ")." : ".")),
     h("p", null, "Bien à vous,"),
     h("p", { "class": "signature-kit" }, signature),
