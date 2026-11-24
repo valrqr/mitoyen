@@ -162,8 +162,8 @@ footer p + p { margin-top: 8px; }
 .jauge .fourchette { background: repeating-linear-gradient(135deg, var(--encre) 0 6px, var(--gris) 6px 12px); }
 .jauge .mitoyen { background: var(--orange); border-radius: 6px; min-width: 10px; }
 
-.papier .cadre, .chantier .cadre { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
-.papier .chapeau, .chantier .chapeau { margin-top: 18px; max-width: 34ch; }
+.papier .cadre, .chantier .cadre, .espace .cadre { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.papier .chapeau, .chantier .chapeau, .espace .chapeau { margin-top: 18px; max-width: 34ch; }
 .document { display: block; width: 100%; height: auto; background: var(--papier); border: 1px solid var(--filet); border-radius: 6px; box-shadow: 0 20px 40px rgba(30,30,30,.12); }
 
 .bientot { display: inline-block; margin-bottom: 14px; padding: 6px 14px; border-radius: 999px; background: var(--encre); color: var(--papier); font-weight: 700; font-size: 14px; }
@@ -174,6 +174,19 @@ footer p + p { margin-top: 8px; }
 .journal li strong { display: block; font-size: 17px; color: var(--encre); margin-bottom: 2px; }
 .journal .quand { flex: none; width: 80px; font-weight: 700; }
 .reserves { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; padding: 16px 22px; background: var(--pierre); font-weight: 600; color: var(--encre); }
+
+.espace { padding-top: 0; }
+.ecran-proprio { margin: 0; border: 2px solid var(--encre); border-radius: 12px; overflow: hidden; background: var(--papier); }
+.ecran-proprio figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; padding: 18px 22px; background: var(--encre); color: var(--papier); font: 700 21px/1.15 "Barlow Semi Condensed", sans-serif; }
+.ecran-proprio figcaption .petit { color: #D6D3D1; font-family: Barlow, sans-serif; font-weight: 400; }
+.soldes { display: grid; grid-template-columns: 1fr 1.4fr; border-bottom: 1px solid var(--filet); }
+.soldes p { display: flex; flex-direction: column; gap: 4px; padding: 16px 22px; }
+.soldes p + p { border-left: 1px solid var(--filet); }
+.soldes strong { font-size: 18px; color: var(--encre); }
+.actions { list-style: none; margin: 0; padding: 8px 0; }
+.actions li { display: flex; align-items: center; gap: 12px; padding: 12px 22px; font-weight: 600; color: var(--encre); }
+.actions li + li { border-top: 1px solid #EBEBEA; }
+.actions svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--encre); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
 .modules { padding-top: 0; }
 .grille-modules { list-style: none; margin: 36px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--filet); border: 1px solid var(--filet); border-radius: 10px; overflow: hidden; }
@@ -197,7 +210,7 @@ footer p + p { margin-top: 8px; }
 
 @media (max-width: 1199px) { .telephone .vignette { right: -24px; } }
 @media (max-width: 809px) {
-  .seance .cadre, .papier .cadre, .chantier .cadre, .liste .cadre { grid-template-columns: 1fr; gap: 40px; }
+  .seance .cadre, .papier .cadre, .chantier .cadre, .espace .cadre, .liste .cadre { grid-template-columns: 1fr; gap: 40px; }
   .seance .cadre > div:last-child { order: -1; }
   .telephone { width: 240px; }
   .telephone .vignette { right: -40px; width: 190px; }
@@ -205,4 +218,7 @@ footer p + p { margin-top: 8px; }
   .atouts dt { font-size: 20px; }
   .grille-modules { grid-template-columns: 1fr; }
   .journal .quand { width: 64px; }
+  .espace .cadre > div { order: -1; }
+  .soldes { grid-template-columns: 1fr; }
+  .soldes p + p { border-left: 0; border-top: 1px solid var(--filet); }
 }
