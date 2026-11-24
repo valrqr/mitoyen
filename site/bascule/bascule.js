@@ -202,11 +202,12 @@ function validerKit(f) {
 }
 
 function tableau(entete, rangs, total) {
-  return h("table", { "class": "chiffres-doc" },
-    h("thead", null, h("tr", null, entete.map(function (c, i) { return h("th", i ? { "class": "n" } : null, c); }))),
+  var deux = !entete || entete.length === 2;
+  return h("table", { "class": "chiffres-doc" + (entete ? "" : " suite") },
+    entete ? h("thead", null, h("tr", null, entete.map(function (c, i) { return h("th", i ? { "class": "n" } : null, c); }))) : null,
     h("tbody", null, rangs.map(function (r, j) {
       return h("tr", total && j === rangs.length - 1 ? { "class": "total" } : null,
-        r.map(function (c, i) { return h("td", i && entete.length === 2 ? { "class": "n" } : null, c); }));
+        r.map(function (c, i) { return h("td", i && deux ? { "class": "n" } : null, c); }));
     })));
 }
 
@@ -226,36 +227,47 @@ function kit(d) {
   if (d.autres) lignes2.push(["Autres frais", euros(d.autres)]);
   lignes2.push(["Coût estimé en gestion bénévole", euros(benevole)]);
   var pied = d.residence_nom + " – proposition de gestion bénévole";
-  var p1 = h("article", { "class": "page", "aria-label": "Page 1 : les chiffres" },
-    h("p", { "class": "bandeau" }, "Mitoyen"),
-    h("h3", { "class": "titre-doc" }, "Et si nous gérions notre copropriété nous-mêmes ?"),
-    h("p", { "class": "sous" }, "Résidence " + d.residence_nom + " · " + d.lots + " lots · proposition d’un " + qui),
+  var nous = d.candidats ? !!pluriel(d.candidats) : true;   /* sans nom, la lettre parle au nom d'un groupe de voisins */
+  var je = nous ? { sujet: "nous", moi: "nous", recois: "recevons", propose: "proposons", tenons: "tenons", reste: "restons" }
+                : { sujet: "je", moi: "moi", recois: "reçois", propose: "propose", tenons: "tiens", reste: "reste" };
+  var maj = function (t) { return t.charAt(0).toUpperCase() + t.slice(1); };
+  var signature = d.candidats || "Des copropriétaires de la résidence " + d.residence_nom;
+  var p1 = h("article", { "class": "page", "aria-label": "Page 1 : la lettre et les chiffres" },
+    h("div", { "class": "en-tete-kit" }, h("img", { src: "/icone.svg", alt: "", width: "44", height: "42" }),
+      h("span", null, h("b", null, "Mitoyen"), h("small", null, "Résidence " + d.residence_nom + " · lettre aux copropriétaires"))),
+    h("h3", { "class": "titre-doc" }, "Et si nous gérions notre copropriété nous-mêmes\u00a0?"),
+    h("p", null, "Bonjour à toutes et à tous,"),
+    h("p", null, "Comme vous, " + je.sujet + " " + je.recois + " chaque trimestre les appels de fonds. Une part importante sert à payer la gestion de notre immeuble : ",
+      h("strong", null, euros(actuel) + " par an"), ", soit " + euros(Math.round(actuel / d.lots)) + " par lot en moyenne."),
+    h("p", null, maj(je.sujet) + " vous " + je.propose + " d’en parler à la prochaine assemblée générale : et si l’un d’entre nous prenait en charge cette gestion, comme " + qui + "\u00a0? " +
+      (eco > 0 ? "Sans honoraires, il ne resterait que les frais réels, et la copropriété économiserait environ " : "Sans honoraires, il ne resterait que les frais réels."),
+      eco > 0 ? h("strong", null, eurosRond(eco) + " par an") : null, eco > 0 ? "." : null),
+    h("p", null, "Ce n’est pas un saut dans l’inconnu : la loi le prévoit, l’assemblée garde toutes ses décisions et l’argent reste sur le compte de la copropriété. Vous trouverez ci-dessous le détail des chiffres et, au verso, les réponses aux questions que vous vous posez sans doute."),
+    h("p", null, maj(je.sujet) + " " + je.reste + " à votre disposition pour en discuter, dans le hall ou autour d’un café" +
+      (d.contact ? " (" + d.contact + ")." : ".")),
+    h("p", null, "Bien à vous,"),
+    h("p", { "class": "signature-kit" }, signature),
     h("div", { "class": "essentiel" }, cles.map(function (c, i) {
       return h("div", i === 2 ? { "class": "eco" } : null, h("span", null, c[0]), h("b", null, c[1]), h("small", null, c[2]));
     })),
-    h("p", null, "Aujourd’hui, le syndic coûte à la copropriété ", h("strong", null, euros(actuel)), " par an, soit " +
-      euros(Math.round(actuel / d.lots)) + " par lot en moyenne. Un " + qui + " ne prend pas d’honoraires : il ne reste que les frais réels, détaillés ci-dessous."),
     h("h4", null, "D’où viennent ces chiffres"),
     tableau(["", "Par an"], lignes1, true),
-    tableau(["", "Par an"], lignes2, true),
+    tableau(null, lignes2, true),
     h("p", { "class": "petit" }, "Les frais de la gestion bénévole sont des estimations, à confirmer par des devis (assurance notamment). Les dépenses de l’immeuble (eau, électricité, entretien, travaux) ne changent pas : seul le coût de la gestion change."),
+    h("p", { "class": "pied" }, pied));
+  var p2 = h("article", { "class": "page", "aria-label": "Page 2 : les questions et le calendrier" },
     h("h4", null, "Ce qui change, ce qui ne change pas"),
     tableau(["", "Aujourd’hui", "Avec un " + qui], [
       ["Qui gère", "Un cabinet", "Un copropriétaire élu"],
       ["Qui décide", "L’assemblée générale", "L’assemblée générale"],
       ["Le compte bancaire", "Au nom du syndicat", "Au nom du syndicat"],
-      ["Le contrôle", "Le conseil syndical", "Le conseil syndical"],
-      ["Le coût de la gestion", eurosRond(actuel) + " par an", eurosRond(benevole) + " par an"]], false),
-    h("p", { "class": "pied" }, pied));
-  var p2 = h("article", { "class": "page", "aria-label": "Page 2 : les questions et le calendrier" },
+      ["Le contrôle", "Le conseil syndical", "Le conseil syndical"]], false),
     h("h4", null, "Les questions qu’on se pose"),
     QUESTIONS.map(function (q) { return h("div", { "class": "question" }, h("p", null, h("strong", null, q[0])), h("p", null, q[1])); }),
     h("h4", null, "Comment se passe la bascule"),
     h("ol", null, ETAPES.map(function (e) { return h("li", null, e); })),
-    (d.candidats || d.contact) ? h("h4", null, "Qui contacter") : null,
-    d.candidats ? h("p", null, "Candidat" + pluriel(d.candidats) + " : ", h("strong", null, d.candidats)) : null,
-    d.contact ? h("p", null, "Pour en parler : " + d.contact) : null,
-    h("p", { "class": "petit avert" }, AVERTISSEMENT),
+    h("p", { "class": "outil" }, h("img", { src: "/icone.svg", alt: "", width: "28", height: "27" }),
+      h("span", null, "Lettre préparée avec Mitoyen (mitoyen.app), l’outil libre des syndics bénévoles. Ce n’est pas un conseil juridique : pour un cas particulier, l’ADIL de votre département vous répond gratuitement.")),
     h("p", { "class": "pied" }, pied));
   return [p1, p2];
 }

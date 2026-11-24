@@ -52,6 +52,14 @@
 .document .avert { margin-top: 5mm; }
 .document .pied { position: absolute; left: 18mm; right: 18mm; bottom: 10mm; margin: 0; padding-top: 2mm;
                   border-top: 0.5px solid #BEBEBE; font-size: 10.5px; color: #5C5C5C; }
+.document .en-tete-kit { display: flex; align-items: center; gap: 4mm; margin-bottom: 4mm; padding-bottom: 3mm; border-bottom: 1px solid #1E1E1E; }
+.document .en-tete-kit img { width: 13mm; height: auto; }
+.document .en-tete-kit span { flex: 1; min-width: 0; }
+.document .en-tete-kit b { display: block; font-size: 20px; line-height: 1.1; }
+.document .en-tete-kit small { display: block; font-size: 12.5px; color: #4A4A4A; }
+.document .signature-kit { font-weight: 700; margin-bottom: 6mm; }
+.document .outil { display: flex; gap: 3mm; align-items: center; margin-top: 4mm; padding: 2.5mm 4mm; background: #F1F2EF; border-radius: 2mm; font-size: 12.5px; line-height: 1.4; }
+.document .outil img { width: 8mm; height: auto; flex: none; }
 .document .bandeau { font: 700 13px/1 Helvetica, Arial, sans-serif; letter-spacing: .04em; margin-bottom: 4mm; }
 .document .essentiel { display: grid; grid-template-columns: repeat(auto-fit, minmax(38mm, 1fr)); gap: 4mm; margin-bottom: 4mm; }
 .document .essentiel div { border-top: 2px solid #1E1E1E; padding-top: 2.5mm; }
@@ -62,10 +70,12 @@
 .document .chiffres-doc th { text-align: left; font-size: 12px; color: #4A4A4A; border-bottom: 1px solid #1E1E1E; padding: 1mm 2mm; }
 .document .chiffres-doc td { border-bottom: 0.5px solid #D4D4D4; padding: 1.2mm 2mm; vertical-align: top; }
 .document .chiffres-doc .n { text-align: right; white-space: nowrap; }
+.document .chiffres-doc.suite { margin-top: -1mm; }
+.document .chiffres-doc.suite tr:first-child td { border-top: 1px solid #1E1E1E; }
 .document .chiffres-doc .total td { font-weight: 700; border-bottom: 1px solid #1E1E1E; }
 .document .question { break-inside: avoid; margin-bottom: 2mm; }
 .document .question p { margin: 0; }
-.document.grand, .document.grand .titre-doc, .document.grand h4, .document.grand .bandeau { font-family: "Atkinson Hyperlegible", Helvetica, Arial, sans-serif; }
+.document.grand, .document.grand .titre-doc, .document.grand h4, .document.grand .bandeau, .document.grand .en-tete-kit b { font-family: "Atkinson Hyperlegible", Helvetica, Arial, sans-serif; }
 .document.grand { font-size: 18px; line-height: 1.55; }
 .document.grand .titre-doc { font-size: 26px; }
 .document.grand h4 { font-size: 20px; }
@@ -88,7 +98,8 @@
   #apercu { margin: 0; padding: 0; border: 0; }
   .document { overflow: visible; }
   .document .page { max-width: none; width: 210mm; min-height: 297mm; margin: 0; border: 0; box-shadow: none;
-                    padding: 16mm 18mm 26mm; break-after: page; }
+                    padding: 13mm 18mm 20mm; break-after: page; }
+  .document .pied { bottom: 8mm; }
   .document .page:last-child { break-after: auto; }
   .document .entete { grid-template-columns: 1fr 1fr; }
   .document .destinataire { grid-column: 2; grid-row: 2; }
