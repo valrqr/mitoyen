@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Passer à un syndic bénévole : courrier pour l’AG et kit de présentation — Mitoyen</title>
+<meta name="description" content="Gratuit et sans compte : le courrier qui fait inscrire le passage à un syndic bénévole à l’ordre du jour de la prochaine assemblée générale (article 10 du décret de 1967), avec les projets de résolution, et un kit de présentation chiffré pour convaincre les copropriétaires.">
+<link rel="canonical" href="https://mitoyen.app/bascule/">
+<meta property="og:title" content="Passer à un syndic bénévole : le courrier pour l’AG">
+<meta property="og:description" content="Le courrier pour l’ordre du jour et un kit de présentation chiffré, gratuits et sans compte.">
+<meta property="og:url" content="https://mitoyen.app/bascule/">
+<meta property="og:image" content="https://mitoyen.app/partage.png">
+<meta property="og:locale" content="fr_FR">
+<link rel="icon" href="/icone.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/bascule/bascule.css">
+</head>
+<body>
+<header class="nav">
+  <div class="cadre">
+    <a class="logo" href="/" aria-label="Mitoyen, accueil"><img src="/icone.svg" alt="" width="36" height="34">Mitoyen</a>
+    <nav class="liens" aria-label="Navigation principale">
+      <a href="/seance/">Outil de séance</a>
+      <a class="btn plein" href="/#liste">Liste d’intérêt</a>
+    </nav>
+  </div>
+</header>
+
+<main class="cadre article bascule">
+  <p class="petit"><a href="/">Accueil</a> · Outil gratuit</p>
+  <h1>Proposer un syndic bénévole à votre prochaine AG</h1>
+  <p class="chapeau">Deux outils gratuits, sans compte : le courrier qui oblige le syndic actuel à inscrire la question à l’ordre du jour, et un kit chiffré pour convaincre vos voisins avant le vote.</p>
+  <p class="confidentiel"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3"/></svg>Rien n’est envoyé ni enregistré : vos documents sont préparés dans votre navigateur.</p>
+
+  <section class="calendrier" aria-labelledby="quand">
+    <h2 id="quand">Envoyez tôt</h2>
+    <p>La plupart des assemblées se tiennent au printemps. La convocation part au moins 21 jours avant la réunion : une demande reçue après passe à l’assemblée suivante, souvent un an plus tard. <strong>Pour une AG d’avril à juin, écrivez dès janvier.</strong></p>
+  </section>
+
+  <h2 id="courrier">1. Le courrier pour l’ordre du jour</h2>
+  <p>Tout copropriétaire peut demander au syndic d’inscrire une question à l’ordre du jour de la prochaine assemblée générale (article 10 du décret du 17 mars 1967). Le courrier joint le projet de résolution de chaque question.</p>
+  <form class="carte" id="form-courrier" novalidate>
+    <fieldset><legend>Vous</legend>
+      <div class="deux">
+        <label>Nom <input type="text" name="expediteur_nom" required maxlength="120" autocomplete="name"></label>
+        <label>Numéros de lots <span class="discret">facultatif</span> <input type="text" name="expediteur_lots" maxlength="60"></label>
+        <label>En qualité de <select name="qualite">
+          <option value="coproprietaire">Copropriétaire</option>
+          <option value="conseil">Membre du conseil syndical</option>
+          <option value="president">Président du conseil syndical</option></select></label>
+        <label>Ville <span class="discret">pour « Fait à »</span> <input type="text" name="lieu" maxlength="80" autocomplete="address-level2"></label>
+        <label class="pleine">Adresse <textarea name="expediteur_adresse" rows="2" required maxlength="300" autocomplete="street-address"></textarea></label>
+      </div>
+    </fieldset>
+    <fieldset><legend>Le syndic actuel</legend>
+      <div class="deux">
+        <label>Nom ou raison sociale <input type="text" name="syndic_nom" required maxlength="120"></label>
+        <label>Adresse <textarea name="syndic_adresse" rows="2" required maxlength="300"></textarea></label>
+      </div>
+    </fieldset>
+    <fieldset><legend>La copropriété et la proposition</legend>
+      <div class="deux">
+        <label>Nom de la résidence <input type="text" name="residence_nom" required maxlength="120"></label>
+        <label>Adresse de la résidence <input type="text" name="residence_adresse" required maxlength="300"></label>
+        <label>Gestion proposée <select name="mode">
+          <option value="benevole">Syndic bénévole</option>
+          <option value="cooperatif">Syndic coopératif</option></select></label>
+        <label>Candidat <span class="discret">vous, si vide</span> <input type="text" name="candidat" maxlength="120"></label>
+        <label>Durée du mandat <select name="duree_mois">
+          <option value="12">1 an</option><option value="24">2 ans</option><option value="36" selected>3 ans</option></select></label>
+        <label>Prise de fonction <select name="prise_de_fonction">
+          <option value="fin_mandat">À la fin du mandat en cours (conseillé)</option>
+          <option value="date">À une date précise</option></select></label>
+        <label>Date, si précise <input type="date" name="date_prise"></label>
+      </div>
+      <label class="coche"><input type="checkbox" name="assurance"> Ajouter une résolution pour l’assurance de responsabilité civile du syndic, payée par la copropriété</label>
+      <label class="etroit">Prime annuelle maximale <span class="discret">facultatif</span> <input type="text" inputmode="decimal" name="prime_max"></label>
+      <label class="coche"><input type="checkbox" name="mention_outil"> Mentionner que le syndic s’appuiera sur Mitoyen</label>
+    </fieldset>
+    <p class="erreur" role="alert" hidden></p>
+    <div><button class="btn plein" type="submit">Préparer le courrier</button></div>
+  </form>
+  <div class="note"><strong>Avant d’envoyer :</strong> signez la lettre et envoyez-la en recommandé avec avis de réception (ou en recommandé électronique). Mieux vaut viser la fin du mandat en cours qu’une révocation.</div>
+
+  <h2 id="kit">2. Le kit de présentation</h2>
+  <p>Deux pages à distribuer avant l’assemblée : ce que coûte le syndic aujourd’hui, ce que coûterait une gestion bénévole, ce qui change, et les réponses aux questions qu’on se pose. Les honoraires figurent dans les annexes comptables jointes à la dernière convocation.</p>
+  <form class="carte" id="form-kit" novalidate>
+    <div class="deux">
+      <label>Nom de la résidence <input type="text" name="residence_nom" required maxlength="120"></label>
+      <label>Nombre de lots <input type="number" name="lots" required min="2" max="500" inputmode="numeric"></label>
+      <label>Gestion proposée <select name="mode">
+        <option value="benevole">Syndic bénévole</option>
+        <option value="cooperatif">Syndic coopératif</option></select></label>
+    </div>
+    <fieldset><legend>Aujourd’hui, par an</legend>
+      <div class="deux">
+        <label>Honoraires du syndic <input type="text" inputmode="decimal" name="honoraires" required placeholder="4 800"></label>
+        <label>Frais facturés en plus du forfait <span class="discret">si vous les connaissez</span> <input type="text" inputmode="decimal" name="frais_annexes"></label>
+      </div>
+    </fieldset>
+    <fieldset><legend>Avec un syndic bénévole, par an (estimation)</legend>
+      <div class="deux">
+        <label>Assurance du syndic <span class="discret">demandez un devis</span> <input type="text" inputmode="decimal" name="assurance"></label>
+        <label>Frais postaux et fournitures <input type="text" inputmode="decimal" name="frais_postaux"></label>
+        <label>Outil de gestion <span class="discret">0 si logiciel libre</span> <input type="text" inputmode="decimal" name="outil"></label>
+        <label>Autres frais <input type="text" inputmode="decimal" name="autres"></label>
+      </div>
+    </fieldset>
+    <div class="deux">
+      <label>Candidat(s) <span class="discret">facultatif</span> <input type="text" name="candidats" maxlength="200"></label>
+      <label>Pour en parler <span class="discret">facultatif : téléphone, e-mail, lot</span> <input type="text" name="contact" maxlength="200"></label>
+    </div>
+    <label class="coche"><input type="checkbox" name="grand"> Version en grands caractères, pour les malvoyants</label>
+    <p class="erreur" role="alert" hidden></p>
+    <div><button class="btn plein" type="submit">Préparer le kit</button></div>
+  </form>
+
+  <section id="apercu" class="apercu" hidden aria-labelledby="apercu-titre">
+    <h2 id="apercu-titre">Votre document</h2>
+    <p>Vérifiez-le, puis imprimez-le ou enregistrez-le en PDF (choisissez « Enregistrer au format PDF » comme imprimante).</p>
+    <div class="boutons-apercu">
+      <button class="btn plein" type="button" id="imprimer">Imprimer ou enregistrer en PDF</button>
+      <button class="btn vide" type="button" id="modifier">Modifier</button>
+    </div>
+    <div id="document" class="document"></div>
+  </section>
+
+  <h2>Et après le vote ?</h2>
+  <ol class="etapes">
+    <li>À la fin du mandat en cours, le nouveau syndic prend ses fonctions et ouvre le compte bancaire du syndicat.</li>
+    <li>L’ancien syndic remet la trésorerie sous 15 jours, les archives sous un mois, puis le solde des fonds et l’état des comptes dans les deux mois suivants (article 18-2 de la loi de 1965).</li>
+    <li>Le nouveau syndic met à jour l’immatriculation de la copropriété au registre national.</li>
+  </ol>
+  <p>Le jour de l’assemblée, l’<a href="/seance/">outil de séance</a> compte les voix à votre place, et le <a href="/guides/president-de-seance/">guide du président de séance</a> rappelle ce qu’il faut vérifier.</p>
+  <p class="petit">Documents d’information, pas un conseil juridique : les délais et majorités sont ceux de la loi du 10 juillet 1965 et du décret du 17 mars 1967. Pour un cas particulier, l’ADIL de votre département répond gratuitement.</p>
+</main>
+
+<footer>
+  <div class="cadre">
+    <p class="pied-marque"><img src="/icone.svg" alt="" width="44" height="42"></p>
+    <p class="fort">Mitoyen, l’outil libre des syndics bénévoles. Partagez les murs, plus les frais de syndic.</p>
+    <p class="petit"><a href="/mentions-legales/">Mentions légales et confidentialité</a></p>
+    <p class="petit">© 2026 Mitoyen. Logiciel libre sous licence AGPL-3.0.</p>
+  </div>
+</footer>
+<script src="/bascule/bascule.js"></script>
+</body>
+</html>
