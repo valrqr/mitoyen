@@ -94,6 +94,7 @@ function validerCourrier(f) {
     assurance: !!f.assurance,
     prime_max: montant(f.prime_max, "Prime d’assurance annuelle"),
     mention_outil: !!f.mention_outil,
+    autocollant: !!f.autocollant,
     duree_mois: parseInt(f.duree_mois || "36", 10),
     date: aujourdhui()
   };
@@ -138,6 +139,11 @@ function resolutions(d) {
     res.push({ titre: "Assurance de responsabilité civile du syndic non professionnel",
       texte: "L’assemblée générale décide de souscrire, pour le compte du syndicat, une assurance couvrant la responsabilité civile du syndic non professionnel" + plafond + ". La prime est répartie en charges communes générales et inscrite au budget prévisionnel.",
       majorite: "Majorité de l’article 24 de la loi du 10 juillet 1965." });
+  }
+  if (d.autocollant) {
+    res.push({ titre: "Autorisation d’apposer un autocollant Mitoyen sur l’interphone",
+      texte: "L’assemblée générale autorise l’apposition, sur l’interphone de l’immeuble, d’un autocollant rond de 3 cm de diamètre indiquant que la copropriété est gérée avec Mitoyen. Il est fourni gratuitement, n’engage la copropriété à rien et sera retiré sur simple décision de l’assemblée générale.",
+      majorite: art25 });
   }
   return res;
 }
