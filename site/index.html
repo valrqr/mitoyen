@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Mitoyen, l’outil libre des syndics bénévoles</title>
-<meta name="description" content="Mitoyen aide les syndics bénévoles et coopératifs des copropriétés de moins de 50 lots : comptes, assemblée générale, travaux et information des copropriétaires. L’agent prépare, le syndic valide et signe.">
+<meta name="description" content="Mitoyen aide les syndics bénévoles des copropriétés de moins de 50 lots : assemblée générale, appels de fonds, comptabilité, courriers papier. Open source, et gratuit pour les petites copropriétés jusqu’à 5 lots.">
 <link rel="canonical" href="https://mitoyen.app/">
 <meta property="og:title" content="Mitoyen, l’outil libre des syndics bénévoles">
-<meta property="og:description" content="Partagez les murs, plus les frais de syndic. Un outil libre et européen pour les copropriétés de moins de 50 lots.">
+<meta property="og:description" content="Partagez les murs, plus les frais de syndic. Open source, européen, gratuit pour les petites copropriétés.">
 <meta property="og:url" content="https://mitoyen.app/">
 <meta property="og:locale" content="fr_FR">
 <meta property="og:image" content="https://mitoyen.app/partage.png">
@@ -27,8 +27,6 @@
     <a class="logo" href="/" aria-label="Mitoyen, accueil"><img src="/icone.svg" alt="" width="36" height="34">Mitoyen</a>
     <nav class="liens" aria-label="Navigation principale">
       <a href="/seance/">Outil de séance</a>
-      <a href="#principe">Principe</a>
-      <a href="#fonctions">Fonctionnalités</a>
       <a href="#questions">Questions</a>
       <a class="btn plein" href="#liste">Liste d’intérêt</a>
     </nav>
@@ -40,11 +38,15 @@
     <div class="cadre">
       <div>
         <h1>Partagez les murs, plus les frais de syndic.</h1>
-        <p class="chapeau">Mitoyen aide les syndics bénévoles et coopératifs des copropriétés de moins de 50 lots à tenir les comptes, préparer l’assemblée générale et informer chaque copropriétaire. L’agent prépare, le syndic valide et signe.</p>
+        <p class="chapeau">L’outil libre des syndics bénévoles, pour les copropriétés de moins de 50 lots.</p>
         <div class="boutons">
-          <a class="btn plein" href="#liste">Rejoindre la liste d’intérêt</a>
-          <a class="btn vide" href="https://github.com/valrqr/mitoyen">Voir le code source</a>
+          <a class="btn plein" href="/seance/">Essayer l’outil de séance</a>
+          <a class="btn vide" href="#liste">Être prévenu de l’ouverture</a>
         </div>
+        <ul class="pastilles">
+          <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 6l-6 6 6 6M16 6l6 6-6 6"/></svg>Open source</li>
+          <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6v10H3zM9 20v-6h6v6"/></svg>Gratuit pour les petites copropriétés (jusqu’à 5 lots)</li>
+        </ul>
       </div>
       <div class="interphone" aria-hidden="true">
         <div class="grille"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
@@ -60,78 +62,98 @@
     </div>
   </section>
 
-  <section class="outil-seance" aria-labelledby="titre-seance">
+  <section id="seance" class="seance">
     <div class="cadre">
-      <div class="encart">
-        <div>
-          <p class="sur-titre">Gratuit, sans compte</p>
-          <h2 id="titre-seance">Président de séance : comptez les votes de votre prochaine AG</h2>
-          <p>Émargement, pouvoirs et votes par correspondance : l’outil applique les majorités des articles 24, 25 et 26, les passerelles et le plafond des pouvoirs. Il fonctionne sur téléphone ou tablette, même sans réseau, et rien ne quitte l’appareil.</p>
+      <div class="telephone">
+        <img class="ecran" src="/images/seance-votes.webp" width="600" height="1298" alt="L’outil de séance sur téléphone : saisie des votes sur la résolution du ravalement, pour une copropriété fictive" loading="lazy">
+        <img class="vignette" src="/images/seance-resultat.webp" width="480" height="431" alt="Résultat affiché par l’outil : résolution adoptée à l’article 25, 539 voix pour" loading="lazy">
+      </div>
+      <div>
+        <p class="sur-titre">Gratuit, sans compte, en ligne aujourd’hui</p>
+        <h2>Votre prochaine AG, comptée juste.</h2>
+        <p class="chapeau">Présents, pouvoirs, votes par correspondance : l’outil fait le calcul en tantièmes, article par article.</p>
+        <dl class="atouts">
+          <div><dt>24 · 25 · 26</dt><dd>majorités et passerelles</dd></div>
+          <div><dt>Hors ligne</dt><dd>même sans réseau</dd></div>
+          <div><dt>0 envoi</dt><dd>rien ne quitte l’appareil</dd></div>
+        </dl>
+        <div class="boutons">
+          <a class="btn blanc" href="/seance/">Ouvrir l’outil de séance</a>
+          <a class="lien-clair" href="/guides/president-de-seance/">Lire le mode d’emploi</a>
         </div>
-        <div class="boutons-encart"><a class="btn plein" href="/seance/">Ouvrir l’outil de séance</a><a class="lien-guide" href="/guides/president-de-seance/">Lire le mode d’emploi</a></div>
       </div>
     </div>
   </section>
 
-  <section id="principe" class="pierre">
+  <section class="cout">
     <div class="cadre">
-      <div class="entete">
-        <h2>L’agent prépare. Vous décidez.</h2>
-        <p>Mitoyen fait le travail de préparation qui prend des soirées entières. Rien ne part sans votre relecture : vous gardez la main sur chaque envoi, chaque montant et chaque signature.</p>
+      <h2>Un syndic professionnel, c’est plusieurs milliers d’euros par an.</h2>
+      <p class="source">Immeuble de 20 lots à Nice, devis de trois syndics professionnels obtenus sur un comparateur en ligne, novembre 2026.</p>
+      <div class="comparaison">
+        <div>
+          <p class="ligne"><span>Syndic professionnel</span><span><strong class="chiffre">2 600 à 4 440 €</strong> par an</span></p>
+          <div class="jauge" role="img" aria-label="De 2 600 à 4 440 euros par an"><span class="base" style="width: 58.5%"></span><span class="fourchette" style="left: 58.5%; width: 41.5%"></span></div>
+        </div>
+        <div>
+          <p class="ligne"><span>Syndic bénévole avec Mitoyen</span><span><strong class="chiffre">0 €</strong> jusqu’à 5 lots, une petite fraction au-delà</span></p>
+          <div class="jauge" role="img" aria-label="Une petite fraction du prix d’un syndic professionnel"><span class="mitoyen" style="width: 2.5%"></span></div>
+        </div>
       </div>
-      <table class="partage">
-        <thead><tr><th scope="col">Ce que Mitoyen prépare</th><th scope="col">Ce que vous faites</th></tr></thead>
-        <tbody>
-          <tr><td>Les appels de fonds et les relances, à partir du budget voté</td><td class="fort">Vous vérifiez les montants et lancez l’envoi</td></tr>
-          <tr><td>La convocation d’assemblée générale et les projets de résolution</td><td class="fort">Vous fixez l’ordre du jour et signez</td></tr>
-          <tr><td>Le brouillon de procès-verbal, avec les voix comptées pendant la séance</td><td class="fort">Le bureau relit et signe, sur tablette ou sur papier</td></tr>
-          <tr><td>La comparaison des devis poste par poste, sans recommandation</td><td class="fort">L’assemblée choisit l’entreprise</td></tr>
-          <tr><td>Le compte rendu de réunion de chantier</td><td class="fort">Vous le corrigez avant de le publier aux copropriétaires</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="fonctions">
-    <div class="cadre">
-      <h2 class="entete">Tout ce qu’une petite copropriété doit tenir à jour</h2>
-      <div class="fonctions">
-        <article><h3>Comptes et budget</h3><p>La comptabilité du syndicat, le suivi des impayés et les annexes comptables de l’assemblée générale.</p></article>
-        <article><h3>Assemblée générale</h3><p>Convocation, vote par correspondance, séance tenue sur tablette avec émargement signé, puis procès-verbal signé électroniquement.</p></article>
-        <article><h3>Règlement de copropriété en clair</h3><p>Le règlement résumé par thème. Chaque règle renvoie à son article, et vous validez le texte avant toute diffusion.</p></article>
-        <article><h3>Travaux et chantier</h3><p>Plan pluriannuel de travaux, devis comparés sans parti pris, page de suivi du chantier pour les copropriétaires et réception des travaux.</p></article>
-        <article><h3>Accueil des nouveaux arrivants</h3><p>Un dossier prêt pour le nouveau propriétaire ou son locataire, avec les extraits du règlement qui les concernent.</p></article>
-        <article><h3>Mémoire de la copropriété</h3><p>Contrats, devis, procès-verbaux et carnet d’entretien rangés au même endroit, et transmis d’un syndic au suivant.</p></article>
-      </div>
+      <p class="source">Gratuit pour les petites copropriétés : jusqu’à 5 logements, bureaux ou commerces (caves et parkings ne comptent pas). Gratuit pour toutes si vous l’installez vous-même. Au-delà, le tarif de l’offre hébergée sera d’abord annoncé aux inscrits de la liste d’intérêt.</p>
     </div>
   </section>
 
   <section class="papier pierre">
     <div class="cadre">
-      <div class="entete">
-        <h2>Personne n’est laissé de côté</h2>
-        <p>Les copropriétaires sans adresse e-mail reçoivent des courriers prêts à imprimer, composés en Atkinson Hyperlegible, une police dessinée pour les personnes malvoyantes.</p>
-        <p>La couleur est réservée aux montants qui comptent. Tout le reste demeure sobre, en grands caractères et en phrases courtes.</p>
+      <div>
+        <h2>Personne n’est laissé de côté.</h2>
+        <p class="chapeau">Pas d’e-mail ? Chaque copropriétaire reçoit un courrier clair, prêt à imprimer. Le papier reste gratuit.</p>
       </div>
-      <figure class="courrier" aria-label="Exemple de courrier d’appel de fonds">
-        <p class="titre">Résidence Les Mimosas</p>
-        <p>Appel de fonds du deuxième trimestre 2027</p>
-        <p>Votre part pour le lot 4 :</p>
-        <p class="montant">412,50 €</p>
-        <p>À payer avant le 1<sup>er</sup> avril 2027, par virement ou par chèque à l’ordre du syndicat des copropriétaires.</p>
+      <img class="document" src="/images/appel-de-fonds.webp" width="790" height="640" alt="Avis d’appel de fonds préparé par Mitoyen pour une copropriété fictive : 393 euros à payer avant le 1er avril" loading="lazy">
+    </div>
+  </section>
+
+  <section class="chantier">
+    <div class="cadre">
+      <div>
+        <p><span class="bientot">Bientôt</span></p>
+        <h2>Ravalement, toiture : le chantier enfin sous contrôle.</h2>
+        <p class="chapeau">Chaque réunion de chantier racontée aux copropriétaires, chaque réserve suivie jusqu’à sa levée.</p>
+      </div>
+      <figure class="journal" aria-label="Aperçu du futur journal de chantier, pour une copropriété fictive">
+        <figcaption><span>Ravalement de la façade sur rue</span><span class="petit">Aperçu</span></figcaption>
+        <ol>
+          <li><span class="quand">Semaine 3</span><span><strong>Réunion de chantier</strong>Échafaudage posé côté rue. Compte rendu envoyé à tous.</span></li>
+          <li><span class="quand">Semaine 4</span><span><strong>Piquetage des enduits</strong>Terminé. Deux fissures à reprendre, photos jointes.</span></li>
+          <li><span class="quand">Semaine 9</span><span><strong>Réception des travaux</strong>Trois réserves notées, à lever par l’entreprise.</span></li>
+        </ol>
+        <p class="reserves"><span>Réserves à la réception</span><span><strong class="chiffre">1</strong> sur 3 encore ouverte</span></p>
       </figure>
     </div>
   </section>
 
-  <section class="sombre">
+  <section class="modules">
     <div class="cadre">
-      <h2>Libre, européen, sans abonnement imposé</h2>
-      <div class="trois">
-        <div><h3>Code ouvert</h3><p>Mitoyen est un logiciel libre sous licence AGPL. Chacun peut lire le code, le vérifier et l’améliorer.</p></div>
-        <div><h3>Données en Europe</h3><p>Les services utilisés sont européens, y compris le modèle d’IA. Vos données ne servent pas à entraîner quoi que ce soit.</p></div>
-        <div><h3>Gratuit si vous l’installez</h3><p>Gratuit et libre en auto-hébergement. Une offre hébergée, pour ceux qui ne veulent rien installer, est en préparation.</p></div>
-      </div>
-      <a class="btn clair" href="https://github.com/valrqr/mitoyen">Voir le code sur GitHub</a>
+      <h2>Mitoyen prépare. Vous décidez.</h2>
+      <ul class="grille-modules">
+        <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 21h18M5 21V10l7-5 7 5v11M9 21v-6h6v6"/></svg><div><h3>Assemblée générale</h3><p>Convocation, résolutions, décompte et procès-verbal.</p></div></li>
+        <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16v12H4zM4 11h16M8 15h3"/></svg><div><h3>Appels de fonds</h3><p>Calculés à partir du budget voté, avec les relances.</p></div></li>
+        <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 3h14v18H5zM9 7h6M9 11h6M9 15h3"/></svg><div><h3>Comptabilité</h3><p>Tenue en partie double, balance et contrôles.</p></div></li>
+        <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 5h7v14H4zM13 5h7v14h-7z"/></svg><div><h3>Règlement en clair</h3><p>Résumé par thème, chaque règle renvoie à son article.</p></div></li>
+        <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21c1-4 4-6 8-6s7 2 8 6"/></svg><div><h3>Nouveaux arrivants</h3><p>Un dossier prêt pour le propriétaire ou le locataire.</p></div></li>
+        <li><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M14 6l4 4-9 9H5v-4zM12 8l4 4"/></svg><div><h3>Travaux</h3><p>Plan pluriannuel et devis comparés, sans parti pris.</p></div></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="valeurs sombre">
+    <div class="cadre">
+      <ul>
+        <li>Open source (AGPL)</li>
+        <li>Services européens, IA comprise</li>
+        <li>L’IA ne choisit jamais vos devis</li>
+      </ul>
+      <a class="lien-clair" href="https://github.com/valrqr/mitoyen">Voir le code</a>
     </div>
   </section>
 
@@ -139,26 +161,25 @@
     <div class="cadre">
       <h2>Questions fréquentes</h2>
       <div class="faq">
-        <div><h3>Mitoyen remplace-t-il un conseil juridique ?</h3><p>Non. Mitoyen prépare des documents et rappelle les règles usuelles, ce n’est pas un conseil juridique. Pour une question précise, l’ADIL de votre département répond gratuitement.</p></div>
-        <div><h3>L’IA choisit-elle les entreprises ?</h3><p>Non. Elle présente les devis côte à côte, sans recommander l’un plutôt que l’autre. Le choix revient à l’assemblée générale.</p></div>
-        <div><h3>Combien ça coûte ?</h3><p>Mitoyen est gratuit et libre si vous l’installez vous-même. Une offre hébergée est en préparation ; ses conditions seront d’abord annoncées aux inscrits de la liste d’intérêt.</p></div>
-        <div><h3>Combien coûte un syndic professionnel ?</h3><p>Pour un immeuble type de 20 lots à Nice, trois syndics professionnels proposent entre 2 600 et 4 440 € par an, soit 130 à 222 € par lot (devis obtenus sur un comparateur en ligne, novembre 2026). Un syndic bénévole n’est pas rémunéré : la copropriété ne paie que ses frais réels, comme l’assurance et les frais postaux, et ses outils.</p></div>
-        <div><h3>Pour quelles copropriétés ?</h3><p>Les copropriétés de moins de 50 lots gérées par un syndic bénévole ou coopératif.</p></div>
-        <div><h3>Faut-il être à l’aise avec l’informatique ?</h3><p>Le syndic utilise un navigateur web. Les copropriétaires n’ont rien à installer : ils reçoivent un e-mail, un lien ou un courrier.</p></div>
+        <details><summary>Combien ça coûte ?</summary><p>Mitoyen est gratuit pour les petites copropriétés, jusqu’à 5 logements, bureaux ou commerces, et gratuit pour toutes si vous l’installez vous-même. Pour les autres, le tarif de l’offre hébergée sera d’abord annoncé aux inscrits de la liste d’intérêt.</p></details>
+        <details><summary>Combien coûte un syndic professionnel ?</summary><p>Pour un immeuble type de 20 lots à Nice, trois syndics professionnels proposent entre 2 600 et 4 440 € par an, soit 130 à 222 € par lot (devis obtenus sur un comparateur en ligne, novembre 2026). Un syndic bénévole n’est pas rémunéré : la copropriété ne paie que ses frais réels, comme l’assurance et les frais postaux, et ses outils.</p></details>
+        <details><summary>Mitoyen remplace-t-il un conseil juridique ?</summary><p>Non. Mitoyen prépare des documents et rappelle les règles usuelles, ce n’est pas un conseil juridique. Pour une question précise, l’ADIL de votre département répond gratuitement.</p></details>
+        <details><summary>L’IA choisit-elle les entreprises ?</summary><p>Non. Elle présente les devis côte à côte, sans recommander l’un plutôt que l’autre. Le choix revient à l’assemblée générale.</p></details>
+        <details><summary>Pour quelles copropriétés ?</summary><p>Les copropriétés de moins de 50 lots gérées par un syndic bénévole ou coopératif.</p></details>
+        <details><summary>Faut-il être à l’aise avec l’informatique ?</summary><p>Le syndic utilise un navigateur web. Les copropriétaires n’ont rien à installer : ils reçoivent un e-mail, un lien ou un courrier.</p></details>
       </div>
     </div>
   </section>
 
   <section id="liste" class="liste pierre">
     <div class="cadre">
-      <div class="entete">
-        <h2>Être prévenu de l’ouverture</h2>
-        <p>Écrivez-nous pour savoir quand l’offre hébergée ouvrira. Un e-mail à l’ouverture, pas de lettre d’information.</p>
+      <div>
+        <h2>Soyez prévenu de l’ouverture.</h2>
+        <p class="chapeau">Un seul e-mail, à l’ouverture de l’offre hébergée.</p>
       </div>
-      <div class="carte">
-        <p class="adresse">contact@mitoyen.app</p>
-        <a class="btn plein" href="mailto:contact@mitoyen.app?subject=Liste%20d%E2%80%99int%C3%A9r%C3%AAt%20Mitoyen&amp;body=Bonjour%2C%0A%0AJe%20souhaite%20%C3%AAtre%20pr%C3%A9venu%20de%20l%E2%80%99ouverture%20de%20l%E2%80%99offre%20h%C3%A9berg%C3%A9e.%0A%0ANombre%20de%20lots%20de%20ma%20copropri%C3%A9t%C3%A9%20%3A%20%0A">Écrire pour être prévenu</a>
-        <p class="petit">Votre adresse sert uniquement à vous prévenir de l’ouverture de l’offre hébergée. Elle n’est ni revendue ni partagée. Vous pouvez demander sa suppression à tout moment à <a href="mailto:rgpd@mitoyen.app">rgpd@mitoyen.app</a>.</p>
+      <div>
+        <a class="btn plein grand" href="mailto:contact@mitoyen.app?subject=Liste%20d%E2%80%99int%C3%A9r%C3%AAt%20Mitoyen&amp;body=Bonjour%2C%0A%0AJe%20souhaite%20%C3%AAtre%20pr%C3%A9venu%20de%20l%E2%80%99ouverture%20de%20l%E2%80%99offre%20h%C3%A9berg%C3%A9e.%0A%0ANombre%20de%20lots%20de%20ma%20copropri%C3%A9t%C3%A9%20%3A%20%0A">Écrire à contact@mitoyen.app</a>
+        <p class="petit">Votre adresse sert uniquement à vous prévenir. Elle n’est ni revendue ni partagée. Suppression sur simple demande à <a href="mailto:rgpd@mitoyen.app">rgpd@mitoyen.app</a>.</p>
       </div>
     </div>
   </section>
@@ -169,8 +190,8 @@
     <p class="pied-marque"><img src="/icone.svg" alt="" width="44" height="42"></p>
     <p class="fort">Mitoyen, l’outil libre des syndics bénévoles. Partagez les murs, plus les frais de syndic.</p>
     <p class="petit">Mitoyen ne fournit pas de conseil juridique. Pour une question de droit, adressez-vous à l’ADIL de votre département.</p>
-    <p class="petit"><a href="/guides/president-de-seance/">Guide : président de séance en AG</a></p>
-    <p class="petit"><a href="/coproprietes-sans-syndic-nice/">Copropriétés sans syndic à Nice : les chiffres</a></p>
+    <p class="petit"><a href="/guides/president-de-seance/">Guide : président de séance en AG</a></p>
+    <p class="petit"><a href="/coproprietes-sans-syndic-nice/">Copropriétés sans syndic à Nice : les chiffres</a></p>
     <p class="petit"><a href="/mentions-legales/">Mentions légales et confidentialité</a></p>
     <p class="petit">© 2026 Mitoyen. Logiciel libre sous licence AGPL-3.0.</p>
   </div>
