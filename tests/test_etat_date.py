@@ -27,25 +27,43 @@ def _journal(tmp_path, travaux=False):
     return E, compta.charger(tmp_path, "m"), compta.budgets(FICHE, tmp_path, "m")
 
 
-def test_vendeur_endette_dette_ancienne_isolee(tmp_path):
+def _l(partie, ref, debut=""):
+    return next(l for l in partie if l["ref"] == ref and l["libelle"].startswith(debut))
+
+
+def test_vendeur_endette_rubriques_de_l_article_5(tmp_path):
     E, st, bud = _journal(tmp_path, travaux=True)
     ed = ED.etat_date(FICHE, E, st, bud, [9], date(2027, 2, 15))
-    p1 = dict(ed["partie_1"])
-    assert p1["Charges impayées des exercices antérieurs"] == D("120")        # repris à l'ouverture
-    assert p1["Provisions exigibles du budget prévisionnel, exercice en cours"] == D("280")
-    assert p1["Provisions exigibles hors budget (travaux, opérations exceptionnelles)"] == D("450")
-    assert ed["total_1"] == D("850") and not ed["libre"]
-    # Les trois appels de l'année encore à venir incombent à l'acquéreur, et la part des travaux restant à appeler
-    assert {a["date"] for a in ed["appels_a_echoir"]} == {"2027-04-01", "2027-07-01", "2027-10-01"}
-    assert ed["travaux_a_appeler"][0]["reste"] == D("9550")
+    p1 = ed["partie_1"]
+    assert _l(p1, "c")["total"] == D("120")          # repris à l'ouverture : exercice antérieur
+    assert _l(p1, "a")["total"] == D("280")
+    assert _l(p1, "b")["total"] == D("450")
+    assert [l["ref"] for l in p1][:7] == list("abcdefg") and not _l(p1, "d")["suivi"]
+    assert ed["total_1"] == ed["du_compte"] == D("850") and not ed["libre"]
+    # Les trois appels de l'année à venir incombent à l'acquéreur, comme sa part des travaux restant à appeler
+    assert ed["appels_a_echoir"] == ["2027-04-01", "2027-07-01", "2027-10-01"]
+    assert _l(ed["partie_3"], "c")["par_lot"][9] == D("429.75")      # 9 550 € × 450 / 10 000
+    assert _l(ed["partie_3"], "b")["total"] > 0
+    # Le décompte classe les créances comme l'exige une opposition (art. 5-1)
+    dec = ED.decompte_opposition(FICHE, ed)
+    assert [g["ref"] for g in dec] == ["1°", "2°", "3°", "4°"] and dec[0]["total"] == D("850")
+
+
+def test_cedant_qui_garde_un_lot_dette_ventilee(tmp_path):
+    E, st, bud = _journal(tmp_path)
+    ed = ED.etat_date(FICHE, E, st, bud, [9], date(2027, 2, 15))
+    assert ed["autres_lots_du_vendeur"] == []
+    # CP14 possède 4 lots : la vente de deux d'entre eux ne porte que leur part
+    ed = ED.etat_date(FICHE, E, st, bud, [15, 24], date(2027, 2, 15))
+    assert ed["autres_lots_du_vendeur"] == [16, 20] and ed["libre"]
 
 
 def test_trop_verse_apure_les_autres_comptes(tmp_path):
     E, st, bud = _journal(tmp_path)
     ed = ED.etat_date(FICHE, E, st, bud, [1], date(2027, 2, 15))     # 20 € payés sur le budget, dus au fonds
-    assert ed["total_1"] == 0 and ed["total_2"] == 0 and ed["libre"]
+    assert ed["total_1"] == 0 and ed["libre"]
     ed = ED.etat_date(FICHE, E, st, bud, [2, 21], date(2027, 2, 15))  # avance de 50 € reprise à l'ouverture
-    assert ed["libre"] and ed["total_2"] == D("50")
+    assert ed["libre"] and ed["solde_crediteur"] == D("50")
 
 
 def test_sans_comptes_pas_d_etat_date(tmp_path):

@@ -1137,7 +1137,7 @@ def ventes_page(request: Request, copro: str):
     ventes = []
     for m in mutations:
         try:
-            du = ED.etat_date(fiche, E, st, bud, m["lots"], date.fromisoformat(m["date_acte"]))["total_1"]
+            du = ED.etat_date(fiche, E, st, bud, m["lots"], date.fromisoformat(m["date_acte"]))["du_compte"]
         except ED.EtatDateInvalide:
             du = None                          # comptes non tenus à cette date
         ventes.append(ED.suivi(m, jour, du))
@@ -1172,7 +1172,7 @@ def ventes_etat_date(request: Request, copro: str, lots: list[int] = Form(...),
         z.write(f2, f2.name)
     request.session["telechargement"] = f"/app/{copro}/ventes/etat-date/{vid}.zip"
     suite = ("le vendeur est à jour : certificat de l'article 20 joint." if ed["libre"] else
-             f"le vendeur doit {euros(ed['total_1'])} : décompte joint, à transmettre au notaire.")
+             f"le vendeur doit {euros(ed['du_compte'])} : décompte joint, à transmettre au notaire.")
     return retour(f"/app/{copro}/ventes#etat-date", f"État daté prêt ; {suite}", request)
 
 

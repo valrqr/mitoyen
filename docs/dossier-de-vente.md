@@ -43,16 +43,20 @@ La fiche synthétique doit aussi être tenue à jour chaque année, dans les deu
 
 Le notaire demande au syndic, et à lui seul, l'état daté (décret du 17 mars 1967, art. 5). Chez un syndic professionnel, il peut coûter jusqu'à 380 € TTC (décret n° 2020-153, plafond confirmé par le Conseil d'État le 17 mars 2026). Ici, le syndic bénévole l'établit sans honoraires : **Documents → État daté, certificat et suivi de la vente** (`/app/<copro>/ventes`).
 
+Le document suit l'article 5 du décret, rubrique par rubrique et **lot par lot** :
+
 | Partie | Calcul |
 |---|---|
-| 1. Sommes dues par le vendeur | Soldes de son compte à la date choisie : provisions exigibles de l'exercice, hors budget, impayés des exercices antérieurs (les paiements apurent d'abord les dettes les plus anciennes), fonds de travaux, avances. Ce qu'il a versé en trop sur un compte apure ce qu'il doit sur un autre. |
-| 2. Sommes dues par le syndicat au vendeur | Ce qui reste versé d'avance, et sa part des avances (compte 103). |
-| 3. Sommes qui incomberont à l'acquéreur | Les provisions de l'exercice pas encore exigibles (elles sont dues par celui qui est copropriétaire à leur date d'exigibilité, art. 6-2), la reconstitution des avances, et une estimation de la part des travaux votés restant à appeler. |
-| Annexe | Quote-part des lots dans les budgets et les charges réelles des deux exercices précédents ; procédures en cours, saisies par le syndic. |
+| 1. Sommes pouvant rester dues par le cédant | Ce que doit son compte à la date choisie, ses paiements apurant d'abord les dettes les plus anciennes, tous comptes confondus : a) provisions exigibles du budget, b) hors budget, c) charges impayées des exercices antérieurs, e) avances exigibles, et les cotisations exigibles au fonds de travaux. S'il garde d'autres lots, sa dette est ventilée entre tous ses lots au prorata de leurs appels de fonds. |
+| 2. Sommes dont le syndicat pourrait être débiteur | a) la part des lots dans les avances de l'article 45-1 (compte 103). Un éventuel solde créditeur du cédant est signalé pour information. |
+| 3. Sommes qui devraient incomber au nouveau copropriétaire | a) reconstitution des avances, b) provisions non encore exigibles du budget (elles sont dues par celui qui est copropriétaire à leur date d'exigibilité, art. 6-2), c) part des travaux votés restant à appeler (estimation), et les cotisations à venir au fonds de travaux. |
+| Annexe | Quote-part de chaque lot dans le budget prévisionnel et dans les dépenses hors budget des deux exercices précédents ; procédures en cours, saisies par le syndic. |
+
+Les rubriques que Mitoyen ne suit pas (1 d : paiement échelonné de l'article 33 ; 1 f et g : emprunt collectif et cautionnement ; 2 b : déchéance du terme) figurent avec « — » et un renvoi : le syndic les complète s'il y a lieu.
 
 Avec l'état daté, Mitoyen joint :
 - le **certificat de l'article 20** (loi du 10 juillet 1965) si le vendeur ne doit rien : présenté au notaire, il évite l'avis de mutation ;
-- sinon, le **décompte des sommes liquides et exigibles**, qui servira, le cas échéant, à l'opposition.
+- sinon, le **décompte des créances liquides et exigibles**, classées comme l'exige une opposition (art. 5-1 : année courante et deux dernières années échues, puis les deux années antérieures, puis le reste).
 
 L'état daté se calcule à partir des comptes : il demande des soldes d'ouverture saisis avant la date choisie.
 
