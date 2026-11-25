@@ -60,7 +60,8 @@ p { margin: 0; text-wrap: pretty; }
 .boutons { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
 
 /* Interphone */
-.interphone { justify-self: end; width: 100%; max-width: 360px; padding: 28px 24px 24px; border: 2px solid var(--encre); border-radius: 10px; background: linear-gradient(180deg, #ECEDEA, var(--alu)); }
+.interphone { position: relative; justify-self: end; width: 100%; max-width: 360px; padding: 28px 24px 24px; border: 2px solid var(--encre); border-radius: 10px; background: linear-gradient(180deg, #ECEDEA, var(--alu)); }
+.autocollant { position: absolute; top: -40px; left: -40px; width: 120px; height: 120px; transform: rotate(-12deg); filter: drop-shadow(0 2px 3px rgba(30,30,30,.18)); }
 .grille { display: grid; grid-template-columns: repeat(9, 8px); gap: 8px; justify-content: center; margin-bottom: 22px; }
 .grille span { width: 8px; height: 8px; border-radius: 50%; background: rgba(30,30,30,.7); }
 .sonnettes { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
@@ -87,7 +88,8 @@ footer p + p { margin-top: 8px; }
   section { padding: 64px 0; } .accroche { padding: 48px 0 64px; }
   .liens a:not(.btn) { display: none; }
   .accroche .cadre { grid-template-columns: 1fr; gap: 40px; }
-  .interphone { justify-self: stretch; max-width: none; }
+  .interphone { justify-self: stretch; max-width: none; margin-top: 24px; }
+  .autocollant { top: -36px; left: -8px; width: 100px; height: 100px; }
   .mentions h1 { font-size: 34px; }
 }
 
