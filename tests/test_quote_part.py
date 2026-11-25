@@ -150,3 +150,26 @@ def test_ag_en_bref(tmp_path):
         assert f.stat().st_size > 1000
     from pypdf import PdfReader
     assert "Ce qu'a décidé" in PdfReader(str(tmp_path / "b.pdf")).pages[0].extract_text()
+
+
+def test_mail_de_resultats_le_lendemain(tmp_path):
+    import rappel_ag
+    a, _ = _votee(tmp_path)
+    tous = [c["id"] for c in MIMOSAS["coproprietaires"]]
+    a["depouillement"] = {"votes": {a["resolutions"][-1]["num"]: {"contre": tous}}, "amendees": [],
+                          "le": "2027-05-20"}
+    assert rappel_ag.resultats(MIMOSAS, a, "mimosas", date(2027, 5, 20)) is None        # pas le jour même
+    assert rappel_ag.resultats(MIMOSAS, a, "mimosas", date(2027, 5, 22)) is None
+    r = rappel_ag.resultats(MIMOSAS, a, "mimosas", date(2027, 5, 21))
+    assert r["rappel"] == "résultats" and r["envois"]
+    e = next(x for x in r["envois"] if not x.get("aidant"))
+    assert "Ravalement de la façade" in e["texte"] and "Rejeté :" in e["texte"] and "deux mois" in e["texte"]
+    assert e["fichier_pdf"].endswith(f"/en-bref/{e['coproprietaire']}")
+    assert e["fichier_ics"].endswith(f"/echeances/{e['coproprietaire']}.ics")         # il a une part à payer
+    # Les copropriétaires au courrier : le syndic reçoit leur liste
+    au_courrier = {c["id"] for c in MIMOSAS["coproprietaires"] if c.get("envoi") == "courrier" or not c.get("email")}
+    assert au_courrier <= {x["coproprietaire"] for x in r["courrier"]}
+    # Sans dépense adoptée pour lui, pas de fichier d'agenda
+    a["depouillement"]["votes"] = {x["num"]: {"contre": tous} for x in a["resolutions"] if x["majorite"] != "info"}
+    r = rappel_ag.resultats(MIMOSAS, a, "mimosas", date(2027, 5, 21))
+    assert all(x["fichier_ics"] == "" for x in r["envois"]) and "Rien n'a été adopté." in r["envois"][0]["texte"]

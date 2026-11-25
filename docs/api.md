@@ -65,7 +65,7 @@ L'interface web du syndic est servie sous `/app` (voir [interface.md](interface.
 | GET | `/copros/{copro}/ag/{ag}/pv.pdf` | Brouillon de procès-verbal, à relire et faire signer |
 | GET | `/copros/{copro}/ag/{ag}/agenda.ics` | Fichier « ajouter à mon calendrier » |
 | GET | `/copros/{copro}/ag/{ag}/rappels?au=` | Rappel du jour pour cette AG (J-7 ou J-1), un mail par destinataire |
-| GET | `/rappels-ag?au=` | Tous les rappels du jour, toutes copros confondues (workflow `rappel_ag.json`) |
+| GET | `/rappels-ag?au=` | Tous les mails du jour (rappels J-7 et J-1, résultats le lendemain du dépouillement), toutes copros confondues, avec leurs pièces jointes `fichier_pdf` et `fichier_ics` (workflow `rappel_ag.json`) |
 
 ## Pack papier
 

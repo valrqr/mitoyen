@@ -25,8 +25,9 @@ La convocation est notifiée au moins 21 jours avant : c'est loin, et une AG s'o
 |---|---|
 | **7 jours avant** | Date, lieu, lien de visio si l'AG l'a autorisée, ordre du jour, et la date limite du vote par correspondance tant qu'elle n'est pas passée |
 | **La veille** | « C'est demain », l'heure et le lieu ; pour ceux qui ne pourront pas venir, la possibilité de donner pouvoir |
+| **Le lendemain du dépouillement** | Ce qui a été adopté et rejeté, la part du copropriétaire pour les dépenses votées et la date du premier appel, le délai de contestation |
 
-Chaque mail porte un fichier `.ics` : un clic ajoute la réunion à l'agenda, quel qu'il soit (Apple, Google, Outlook, Thunderbird), avec une alerte la veille. Le fichier décrit le fuseau de Paris, donc l'heure reste juste partout.
+Avant l'AG, chaque mail porte « L'AG en bref » de son destinataire et un fichier `.ics` : un clic ajoute la réunion à l'agenda, quel qu'il soit (Apple, Google, Outlook, Thunderbird), avec une alerte la veille. Le fichier décrit le fuseau de Paris, donc l'heure reste juste partout. Le mail des résultats porte « L'AG en bref » d'après le vote et, si le copropriétaire a une dépense à payer, le fichier `.ics` de ses échéances. Il ne remplace pas la notification du procès-verbal.
 
 Quelques attentions :
 

@@ -30,7 +30,7 @@ En mode test, **tous les mails arrivent chez le syndic**, préfixés `[TEST]`. A
 | Workflow | Déclenchement | Ce qu'il fait |
 |---|---|---|
 | `appel_de_fonds.json` | Manuel, chaque trimestre | Génère les avis, attend la validation du syndic, puis les envoie |
-| `rappel_ag.json` | Chaque jour à 9h | Rappels d'AG à J-7 et la veille, avec le fichier « ajouter à mon calendrier » |
+| `rappel_ag.json` | Chaque jour à 9h | Rappels d'AG à J-7 et la veille, puis les résultats le lendemain du dépouillement, avec « L'AG en bref » et les fichiers d'agenda |
 | `echeancier_hebdo.json` | Chaque lundi à 8h | Envoie à chaque syndic ses échéances : contrats à résilier, diagnostics, AG, plan de travaux, fin de mandat |
 
 <p align="center"><img src="apercu_echeancier.png" alt="Aperçu du mail d'échéancier" width="560"></p>

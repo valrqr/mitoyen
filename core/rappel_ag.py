@@ -6,7 +6,11 @@ Le rappel est une attention en plus : il ne la remplace pas et le dit.
 
     - J-7 : rappel, avec la date limite du vote par correspondance si elle n'est pas
       passée, et l'ordre du jour en bref ;
-    - J-1 : « c'est demain », lieu et heure, lien de visio si l'AG l'a autorisée.
+    - J-1 : « c'est demain », lieu et heure, lien de visio si l'AG l'a autorisée ;
+    - le lendemain du dépouillement : les résultats, ce que le copropriétaire va payer
+      et quand, avec « L'AG en bref » et le fichier d'agenda des échéances votées.
+
+Chaque mail porte « L'AG en bref » de son destinataire (avant l'AG, puis après).
 
 Chaque mail porte une pièce jointe .ics : un clic l'ajoute à l'agenda (Apple,
 Google, Outlook, Thunderbird…), sans dépendre d'aucun service.
@@ -150,12 +154,15 @@ def rappels(fiche: dict, ag: dict, copro: str, aujourd_hui: date | None = None,
                            "(le délai du vote par correspondance est passé)."]
         if ecart > 1:
             lignes += ["", "À l'ordre du jour :"] + [f"  {r['num']}. {r['titre']}" for r in ag["resolutions"]]
-        lignes += ["", "Le fichier joint ajoute la réunion à votre agenda.", "",
+        lignes += ["", "En pièces jointes : « L'AG en bref », une page pour savoir ce qui sera décidé et ce que "
+                       "chaque décision vous coûterait, et un fichier qui ajoute la réunion à votre agenda.", "",
                    "Ce rappel ne remplace pas la convocation officielle, qui vous a été notifiée.", "",
                    "L'assistant du syndic"]
+        pieces = {"fichier_ics": f"/copros/{copro}/ag/{ag['id']}/agenda.ics",
+                  "fichier_pdf": f"/copros/{copro}/ag/{ag['id']}/en-bref/{cid}"}
         if par_mail:
             envois.append({"coproprietaire": cid, "nom": c["nom"], "email": c["email"], "objet": objet,
-                           "texte": "\n".join(lignes), "a_vote_par_correspondance": a_vote})
+                           "texte": "\n".join(lignes), "a_vote_par_correspondance": a_vote, **pieces})
         # le proche aidant est prévenu même si le copropriétaire reçoit tout par courrier
         aidant = papier.copie_aidant(fiche, cid)
         if aidant and aidant.get("email"):
@@ -163,9 +170,68 @@ def rappels(fiche: dict, ag: dict, copro: str, aujourd_hui: date | None = None,
                            "objet": f"[Pour {c['nom']}] {objet}", "aidant": True,
                            "texte": "\n".join([f"Bonjour {aidant['nom']},", "",
                                                f"Pour information, avec l'accord de {c['nom']} :", ""] + lignes[2:]),
-                           "a_vote_par_correspondance": a_vote})
+                           "a_vote_par_correspondance": a_vote, **pieces})
     return {"copro": copro, "copropriete": nom_copro, "ag": ag["id"], "date": ag["date"], "heure": ag["heure"],
             "rappel": f"J-{ecart}", "objet": objet, "envois": envois, "courrier": courrier,
             "fichier_ics": f"/copros/{copro}/ag/{ag['id']}/agenda.ics",
             "note_courrier": ("Ces copropriétaires reçoivent leurs documents par courrier : un mot dans la boîte aux "
                               "lettres suffit. L'affiche du hall annonce déjà la date de l'AG.") if courrier else None}
+
+
+def resultats(fiche: dict, ag: dict, copro: str, aujourd_hui: date | None = None) -> dict | None:
+    """Le lendemain du dépouillement : un mail par copropriétaire avec ce qui a été décidé.
+    None les autres jours. Ne remplace pas la notification du procès-verbal."""
+    import ag as assemblee
+    import ag_bref
+    import papier
+    from avis_appel import euros
+    dep_saisi = ag.get("depouillement")
+    if not dep_saisi or not dep_saisi.get("le"):
+        return None
+    jour = aujourd_hui or date.today()
+    if jour != date.fromisoformat(dep_saisi["le"]) + timedelta(days=1):
+        return None
+    dep = assemblee.depouiller(fiche, ag, dep_saisi["votes"], dep_saisi.get("amendees"))
+    nom_copro = fiche["copropriete"]["nom"]
+    d = date.fromisoformat(ag["date"])
+    objet = f"Ce qu'a décidé l'assemblée générale du {d:%d/%m/%Y} – {nom_copro}"
+    envois, courrier = [], []
+    for c in fiche["coproprietaires"]:
+        cid = c["id"]
+        k = ag_bref.contenu(fiche, ag, cid, dep)
+        adoptees = [p for p in k["points"] if p.get("issue") == "adoptée"]
+        rejetees = [p for p in k["points"] if p.get("issue") in ("rejetée", "sans effet")]
+        lignes = [f"Bonjour {c['nom']},", "",
+                  f"Voici, en bref, ce qu'a décidé l'{ag['titre'].lower()} de la {nom_copro} du {date_longue(d)}.", ""]
+        lignes += ["Adopté :"] + [f"  {p['num']}. {p['titre']}" for p in adoptees] if adoptees else ["Rien n'a été adopté."]
+        if rejetees:
+            lignes += ["", "Rejeté :"] + [f"  {p['num']}. {p['titre']}" for p in rejetees]
+        if k["a_payer"] > 0:
+            jour_appel, montant = k["prochain_appel"]
+            lignes += ["", f"Pour les dépenses votées, votre part s'élève à {euros(k['a_payer'])}. Premier appel prévu "
+                           f"le {date_longue(jour_appel)} ({euros(montant)}) : le fichier d'agenda joint en reprend "
+                           f"toutes les dates. L'avis d'appel de fonds fait foi."]
+        lignes += ["", "Le détail est dans « L'AG en bref », jointe à ce mail.", "",
+                   "Ce message ne remplace pas le procès-verbal, qui vous sera adressé. Si vous avez voté contre une "
+                   "décision ou n'étiez ni présent ni représenté, vous disposez de deux mois à compter de sa "
+                   "notification pour la contester.", "", "L'assistant du syndic"]
+        pieces = {"fichier_pdf": f"/copros/{copro}/ag/{ag['id']}/en-bref/{cid}",
+                  "fichier_ics": f"/copros/{copro}/ag/{ag['id']}/echeances/{cid}.ics" if k["a_payer"] > 0 else ""}
+        par_mail = papier.canal(fiche, cid, jour)["canal"] != "courrier" and bool(c.get("email"))
+        if par_mail:
+            envois.append({"coproprietaire": cid, "nom": c["nom"], "email": c["email"], "objet": objet,
+                           "texte": "\n".join(lignes), **pieces})
+        else:
+            courrier.append({"coproprietaire": cid, "nom": c["nom"]})
+        aidant = papier.copie_aidant(fiche, cid)
+        if aidant and aidant.get("email"):
+            envois.append({"coproprietaire": cid, "nom": aidant["nom"], "email": aidant["email"],
+                           "objet": f"[Pour {c['nom']}] {objet}", "aidant": True,
+                           "texte": "\n".join([f"Bonjour {aidant['nom']},", "",
+                                               f"Pour information, avec l'accord de {c['nom']} :", ""] + lignes[2:]),
+                           **pieces})
+    return {"copro": copro, "copropriete": nom_copro, "ag": ag["id"], "date": ag["date"], "heure": ag["heure"],
+            "rappel": "résultats", "objet": objet, "envois": envois, "courrier": courrier,
+            "note_courrier": ("Ces copropriétaires reçoivent leurs documents par courrier : imprimez et glissez dans "
+                              "leur boîte aux lettres leur « AG en bref » (page de l'AG, « Documents de… »).")
+            if courrier else None}

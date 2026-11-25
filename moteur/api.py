@@ -66,7 +66,7 @@ Routes :
     PUT  /copros/{copro}/relances/{id}                      marquer envoyée (date, moyen, présentation) ou annulée
     GET  /copros/{copro}/ag/{id}/agenda.ics                 « ajouter à mon calendrier »
     GET  /copros/{copro}/ag/{id}/rappels?au=                rappel du jour (J-7, J-1) pour une AG
-    GET  /rappels-ag?au=                                    tous les rappels du jour, un par destinataire (n8n)
+    GET  /rappels-ag?au=                                    rappels du jour (J-7, J-1, résultats à J+1), un par destinataire (n8n)
     GET  /copros/{copro}/meubles-tourisme?au=               registre des déclarations, interdiction possible ?
     POST /copros/{copro}/meubles-tourisme/declarations      information reçue d'un propriétaire (art. 9-2)
     PUT  /copros/{copro}/meubles-tourisme/declarations/{id} fin de la location touristique
@@ -925,14 +925,14 @@ def rappels_du_jour(au: date | None = Query(None)) -> dict:
         fiche = fiche_de(c)
         for a in assemblee.lister_ag(DOSSIER_DATA, c):
             try:
-                r = rappel_ag.rappels(fiche, ag_de(c, a["id"]), c, jour)
-            except rappel_ag.RappelInvalide as e:
+                a_ = ag_de(c, a["id"])
+                r = rappel_ag.rappels(fiche, a_, c, jour) or rappel_ag.resultats(fiche, a_, c, jour)
+            except (rappel_ag.RappelInvalide, assemblee.AGInvalide) as e:
                 erreurs.append({"copro": c, "ag": a["id"], "erreur": str(e)})
                 continue
             if not r:
                 continue
-            envois += [{**e, "copro": c, "ag": a["id"], "rappel": r["rappel"], "fichier_ics": r["fichier_ics"]}
-                       for e in r["envois"]]
+            envois += [{**e, "copro": c, "ag": a["id"], "rappel": r["rappel"]} for e in r["envois"]]
             if r["courrier"]:
                 syndic = next(x for x in fiche["coproprietaires"]
                               if x["id"] == fiche["gouvernance"]["syndic"]["coproprietaire_id"])

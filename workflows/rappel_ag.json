@@ -1,5 +1,5 @@
 {
-  "name": "Mitoyen – Rappels d'assemblée générale",
+  "name": "Mitoyen – Rappels et résultats d'assemblée générale",
   "nodes": [
     {
       "id": "b57397c4-c232-4fe9-9e0d-bad7008283d6",
@@ -116,8 +116,8 @@
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
       "position": [
-        960,
-        200
+        1440,
+        120
       ],
       "credentials": {
         "httpHeaderAuth": {
@@ -127,7 +127,7 @@
       },
       "parameters": {
         "method": "GET",
-        "url": "={{ $('Config').first().json.moteur_url }}{{ $json.fichier_ics }}",
+        "url": "={{ $('Config').first().json.moteur_url }}{{ $('Un mail par destinataire').item.json.fichier_ics }}",
         "authentication": "genericCredentialType",
         "genericAuthType": "httpHeaderAuth",
         "options": {
@@ -142,11 +142,11 @@
     },
     {
       "id": "bb0e48fd-f2de-4f65-af07-a96eed6ed82c",
-      "name": "Envoyer le rappel",
+      "name": "Envoyer le mail",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
       "position": [
-        1200,
+        1680,
         200
       ],
       "credentials": {
@@ -162,7 +162,7 @@
         "emailFormat": "text",
         "text": "={{ $('Un mail par destinataire').item.json.texte }}",
         "options": {
-          "attachments": "data"
+          "attachments": "={{ Object.keys($binary || {}).join(',') }}"
         }
       }
     },
@@ -198,9 +198,9 @@
       "parameters": {
         "fromEmail": "={{ $('Config').first().json.email_expediteur }}",
         "toEmail": "={{ $('Config').first().json.email_test || $json.syndic_email }}",
-        "subject": "={{ $('Config').first().json.email_test ? '[TEST] ' : '' }}Rappel d'AG ({{ $json.rappel }}) : {{ $json.noms.length }} copropriétaire(s) au courrier",
+        "subject": "={{ $('Config').first().json.email_test ? '[TEST] ' : '' }}{{ $json.rappel === 'résultats' ? \"Résultats d'AG\" : \"Rappel d'AG (\" + $json.rappel + \")\" }} : {{ $json.noms.length }} copropriétaire(s) au courrier",
         "emailFormat": "text",
-        "text": "=Bonjour,\n\nLe rappel de l'assemblée générale du {{ $json.ag.slice(8,10) + '/' + $json.ag.slice(5,7) + '/' + $json.ag.slice(0,4) }} ({{ $json.copropriete }}) est parti par mail. Ces copropriétaires reçoivent leurs documents par courrier :\n\n{{ $json.noms.map(n => '- ' + n).join('\\n') }}\n\n{{ $json.note }}\n\nL'assistant du syndic",
+        "text": "=Bonjour,\n\nLe mail « {{ $json.rappel }} » de l'assemblée générale du {{ $json.ag.slice(8,10) + '/' + $json.ag.slice(5,7) + '/' + $json.ag.slice(0,4) }} ({{ $json.copropriete }}) est parti par mail. Ces copropriétaires reçoivent leurs documents par courrier :\n\n{{ $json.noms.map(n => '- ' + n).join('\\n') }}\n\n{{ $json.note }}\n\nL'assistant du syndic",
         "options": {}
       }
     },
@@ -211,13 +211,76 @@
       "typeVersion": 1,
       "position": [
         0,
-        -60
+        -140
       ],
       "parameters": {
         "width": 520,
-        "height": 220,
-        "content": "## Rappels d'assemblée générale\nChaque jour à 9h, Mitoyen envoie les rappels dus ce jour-là : J-7 (avec l'ordre du jour et la date limite du vote par correspondance) et J-1. Chaque mail porte le fichier .ics « ajouter à mon calendrier ».\n\n- **email_test** rempli : tous les mails arrivent à cette adresse (l'adresse réelle est rappelée dans l'objet). Vide : envoi réel\n- **au** vide = aujourd'hui. Pour tester : la date d'un rappel, par exemple 7 jours avant une AG\n- Les copropriétaires au courrier ne reçoivent rien : le syndic reçoit leur liste\n\nLe rappel ne remplace jamais la convocation officielle."
+        "height": 300,
+        "content": "## Rappels et résultats d'assemblée générale\nChaque jour à 9h, Mitoyen envoie les mails dus ce jour-là :\n- **J-7** (ordre du jour, date limite du vote par correspondance) et **J-1** : avec « L'AG en bref » (ce qui sera décidé, ce que ça coûterait) et le fichier .ics de la réunion ;\n- **le lendemain du dépouillement** : ce qui a été décidé, avec « L'AG en bref » et, s'il a une dépense à payer, le fichier .ics de ses échéances.\n\n- **email_test** rempli : tous les mails arrivent à cette adresse (l'adresse réelle est rappelée dans l'objet). Vide : envoi réel\n- **au** vide = aujourd'hui. Pour tester : 7 jours avant une AG, ou le lendemain d'un dépouillement\n- Les copropriétaires au courrier ne reçoivent rien : le syndic reçoit leur liste\n\nCes mails ne remplacent ni la convocation ni le procès-verbal."
       }
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Config').first().json.moteur_url }}{{ $json.fichier_pdf }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "pdf"
+            }
+          }
+        }
+      },
+      "id": "3e68dad3-be25-4c92-94d1-aa7a1ab573f8",
+      "name": "Télécharger l'AG en bref (.pdf)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        200
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "REMPLACER",
+          "name": "Moteur syndic"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "ee13286b-8325-4528-8cc5-5d629c95e941",
+              "leftValue": "={{ $('Un mail par destinataire').item.json.fichier_ics }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "92760395-b5ac-4cd6-9324-6a434943ca39",
+      "name": "Fichier d'agenda ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        200
+      ]
     }
   ],
   "connections": {
@@ -274,7 +337,7 @@
       "main": [
         [
           {
-            "node": "Télécharger l'agenda (.ics)",
+            "node": "Télécharger l'AG en bref (.pdf)",
             "type": "main",
             "index": 0
           }
@@ -285,7 +348,7 @@
       "main": [
         [
           {
-            "node": "Envoyer le rappel",
+            "node": "Envoyer le mail",
             "type": "main",
             "index": 0
           }
@@ -297,6 +360,35 @@
         [
           {
             "node": "Prévenir le syndic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Télécharger l'AG en bref (.pdf)": {
+      "main": [
+        [
+          {
+            "node": "Fichier d'agenda ?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fichier d'agenda ?": {
+      "main": [
+        [
+          {
+            "node": "Télécharger l'agenda (.ics)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Envoyer le mail",
             "type": "main",
             "index": 0
           }

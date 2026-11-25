@@ -1072,6 +1072,7 @@ def test_rappel_ag_tous_les_rappels_du_jour():
     r = c.get("/rappels-ag", params={"au": "2027-06-05"}, headers=H).json()
     assert r["nb_envois"] == len(r["envois"]) > 0 and r["erreurs"] == []
     assert all(e["fichier_ics"] == "/copros/mimosas/ag/2027-06-12-extra/agenda.ics" for e in r["envois"])
+    assert all(e["fichier_pdf"].endswith(f"/en-bref/{e['coproprietaire']}") for e in r["envois"])
     assert r["courriers"][0]["syndic_email"] and "Simon Paul" in r["courriers"][0]["noms"]
     assert c.get("/rappels-ag", params={"au": "2027-06-06"}, headers=H).json()["nb_envois"] == 0
     assert c.get("/rappels-ag").status_code == 401
