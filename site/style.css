@@ -163,6 +163,10 @@ footer p + p { margin-top: 8px; }
 .cout h2 { max-width: 20ch; }
 .source { margin-top: 14px; max-width: 70ch; font-size: 16px; }
 .comparaison { display: grid; gap: 22px; margin: 36px 0 24px; }
+.atout { display: flex; gap: 14px; align-items: flex-start; margin-top: 28px; max-width: 46rem; padding: 18px 20px; background: var(--pierre); border-left: 3px solid var(--encre); border-radius: 0 10px 10px 0; }
+.atout svg { width: 26px; height: 26px; flex: none; margin-top: 2px; fill: none; stroke: var(--encre); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.atout p { margin: 0; font-size: 17px; }
+.atout strong { color: var(--encre); }
 .ligne { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-bottom: 8px; font-weight: 600; color: var(--encre); }
 .chiffre { color: var(--orange); font-weight: 700; font-variant-numeric: tabular-nums; }
 .jauge { position: relative; height: 40px; background: var(--pierre); border-radius: 6px; overflow: hidden; }
