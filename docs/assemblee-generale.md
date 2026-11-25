@@ -36,3 +36,36 @@ Quelques attentions :
 - chaque rappel précise qu'il ne remplace pas la convocation officielle.
 
 > Le formulaire reprend la structure et les mentions du modèle officiel : avant un usage réel, comparez-le à l'annexe de l'arrêté du 2 juillet 2020 sur Légifrance. Une case laissée vide n'est pas comptée et signalée au bureau, la loi ne disant pas comment la traiter. Le procès-verbal signé reste la seule référence.
+
+## Combien ça me coûte ?
+
+Avant de voter, chaque copropriétaire voit ce qu'une résolution lui coûterait à lui, et pas seulement le montant total.
+
+- **Sur le formulaire de vote par correspondance**, sous chaque résolution chiffrée : « Votre part : 216,00 € en 2 appels de 108,00 € », ou « vous n'êtes pas concerné » si ses lots n'ont pas de tantièmes dans la clé de la résolution.
+- **Une page à joindre à la convocation**, « Ce que chaque résolution vous coûterait » : le montant total, la part du copropriétaire et les échéances. Le total des dépenses ponctuelles est indiqué ; quand plusieurs devis sont proposés pour les mêmes travaux, il ne compte que le plus cher.
+
+D'où viennent les montants :
+
+| Résolution | Montant |
+|---|---|
+| Question saisie avec un montant (`Remplacement de la porte du hall ; 4 800 € ; 2 appels`) | Le montant TTC saisi, en une ou plusieurs échéances (12 au plus) |
+| Devis d'un dossier de travaux | Le montant TTC du devis |
+| Cotisation au fonds de travaux | La cotisation annuelle de la fiche |
+| Budget prévisionnel | Le budget de l'exercice en cours, présenté comme tel : le projet joint à la convocation fait foi |
+
+La part est calculée lot par lot selon les tantièmes de la clé de la résolution, comme sur un avis d'appel de fonds (méthode du plus fort reste : la somme des parts retombe toujours sur le total). Les échéances suivent les dates d'exigibilité habituelles de la fiche, à partir de la première qui suit l'AG ; pour le budget et le fonds de travaux, à partir du début de l'exercice suivant. Elles sont indicatives : l'assemblée fixe le calendrier des appels.
+
+API : `GET /copros/{copro}/ag/{ag}/votre-part` (toutes les parts, JSON) et `GET /copros/{copro}/ag/{ag}/votre-part/{id}` (le PDF d'un copropriétaire).
+
+## L'AG en bref
+
+La plupart des copropriétaires ne lisent ni la convocation ni le procès-verbal. « L'AG en bref » leur dit l'essentiel sur une page, en une minute.
+
+- **Avant l'AG**, à joindre à la convocation : la date et le lieu, le dernier jour pour voter par correspondance, la part du lecteur si toutes les dépenses sont adoptées, la liste des points avec sa part pour chacun, et les trois façons de participer (venir, donner un pouvoir, voter par correspondance).
+- **Après le dépouillement** : le nombre de décisions adoptées et rejetées, ce que le lecteur va payer et la date du prochain appel, chaque point avec son issue, puis « Et maintenant ? » (appels de fonds, procès-verbal, délai de contestation de deux mois de l'article 42).
+
+Le texte est construit à partir des résultats, sans IA : aucune reformulation ne peut trahir une décision. La page dit qu'elle ne remplace ni la convocation ni le procès-verbal signé. Elle suit les préférences de chacun : police Atkinson Hyperlegible pour les envois papier, grands caractères sur demande.
+
+**Les échéances votées dans son agenda.** Après le dépouillement, un fichier `.ics` reprend, pour chaque copropriétaire, les échéances des dépenses ponctuelles adoptées : un événement par appel, avec une alerte une semaine avant. Le budget et le fonds de travaux n'y figurent pas, puisqu'ils passent déjà par les appels trimestriels habituels. Dates et montants sont indicatifs : l'avis d'appel de fonds fait foi.
+
+API : `GET /copros/{copro}/ag/{ag}/en-bref/{id}` (PDF, avant ou après selon que le dépouillement est fait) et `GET /copros/{copro}/ag/{ag}/echeances/{id}.ics`.

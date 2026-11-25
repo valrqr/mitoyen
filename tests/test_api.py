@@ -611,6 +611,12 @@ def test_ag_de_bout_en_bout():
     assert pdf.status_code == 200 and pdf.content[:4] == b"%PDF"
     assert c.get(f"{base}/formulaires/CP99", headers=H).status_code == 404
 
+    # « Combien ça me coûte ? » : budget et fonds de travaux chiffrés depuis la fiche
+    vp = c.get(f"{base}/votre-part", headers=H).json()["coproprietaires"]["CP08"]
+    assert {x["num"] for x in vp["lignes"]} == {2, 3}
+    assert c.get(f"{base}/votre-part/CP08", headers=H).content[:4] == b"%PDF"
+    assert c.get(f"{base}/votre-part/CP99", headers=H).status_code == 404
+
     # Formulaires : à temps, hors délai, choix invalide
     ok = c.put(f"{base}/correspondance/CP08", headers=H, json={"recu_le": "2027-04-10", "votes": {
         "1": "pour", "2": "contre", "3": "pour", "4": "pour", "5": None, "6": None, "7": "pour"}})
@@ -653,6 +659,11 @@ def test_ag_de_bout_en_bout():
     assert {p["id"] for p in dep["a_notifier"]} >= {"CP14", "CP06", "CP08", "CP11", "CP05"}
     pv = c.get(f"{base}/pv.pdf", headers=H)
     assert pv.status_code == 200 and pv.content[:4] == b"%PDF"
+    # Après le dépouillement : l'AG en bref et le fichier d'agenda des échéances votées
+    bref = c.get(f"{base}/en-bref/CP08", headers=H)
+    assert bref.status_code == 200 and "apres" in bref.headers["content-disposition"]
+    ics = c.get(f"{base}/echeances/CP08.ics", headers=H)
+    assert ics.status_code == 200 and ics.text.startswith("BEGIN:VCALENDAR")
     # Un participant inconnu en séance est refusé
     assert c.post(f"{base}/depouillement", headers=H,
                   json={"votes": {"1": {"contre": ["CP11"]}}}).status_code == 422
@@ -1230,11 +1241,20 @@ def test_interface_pages_et_actions():
     assert "Rez-de-chaussée" in cp and "3e étage" in cp and "Syndic" in cp
     # Une AG préparée depuis l'interface
     r = n.post("/app/mimosas/ag", data={"date_ag": "2027-11-20", "heure": "18h", "lieu": "Salle commune",
-                                        "odj_type": "true", "autres": "Remplacement de la porte du hall"},
+                                        "odj_type": "true",
+                                        "autres": "Remplacement de la porte du hall ; 4 800 € ; 2 appels"},
                follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/app/mimosas/ag/2027-11-20"
     d = n.get("/app/mimosas/ag/2027-11-20").text
     assert "Remplacement de la porte du hall" in d and "Calendrier" in d
+    assert "4 800,00 € en 2 appels" in d.replace("\u202f", " ").replace("\u00a0", " ")
+    assert "Ce que chaque résolution lui coûterait" in d and "L'AG en bref" in d.replace("&#39;", "'")
+    assert n.get("/copros/mimosas/ag/2027-11-20/en-bref/CP01").content[:4] == b"%PDF"
+    assert n.get("/copros/mimosas/ag/2027-11-20/echeances/CP01.ics").status_code == 409     # pas encore votée
+    # Un montant illisible : message clair
+    r = n.post("/app/mimosas/ag", data={"date_ag": "2027-11-28", "heure": "18h", "lieu": "Salle commune",
+                                        "autres": "Porte ; beaucoup"})
+    assert r.status_code == 200 and "AG non créée" in r.text
     # Heure illisible : message clair, pas d'erreur serveur
     r = n.post("/app/mimosas/ag", data={"date_ag": "2027-11-27", "heure": "le soir", "lieu": "Salle commune"})
     assert r.status_code == 200 and "AG non créée" in r.text

@@ -38,6 +38,9 @@ Routes :
     POST /copros/{copro}/ag                                 prépare une AG (date, lieu, ordre du jour)
     GET  /copros/{copro}/ag/{ag}                            AG + calendrier légal + feuille de présence
     GET  /copros/{copro}/ag/{ag}/formulaires/{id}           formulaire de vote par correspondance pré-rempli (PDF)
+    GET  /copros/{copro}/ag/{ag}/votre-part/{id}            ce que chaque résolution coûterait à ce copropriétaire (PDF)
+    GET  /copros/{copro}/ag/{ag}/en-bref/{id}               « L'AG en bref » : une page, avant l'AG ou après le dépouillement
+    GET  /copros/{copro}/ag/{ag}/echeances/{id}.ics         échéances des dépenses adoptées, pour l'agenda
     PUT  /copros/{copro}/ag/{ag}/correspondance/{id}        enregistre un formulaire reçu (refusé hors délai)
     PUT  /copros/{copro}/ag/{ag}/presences                  présents, visio, mandats (contrôle de l'art. 22)
     GET  /copros/{copro}/ag/{ag}/feuille-presence.pdf       feuille de présence à faire émarger
@@ -119,6 +122,8 @@ import etat_date  # noqa: E402
 import bulletin  # noqa: E402
 import consultation  # noqa: E402
 import rappel_ag  # noqa: E402
+import quote_part  # noqa: E402
+import ag_bref  # noqa: E402
 import reglement  # noqa: E402
 import meubles_tourisme  # noqa: E402
 import nouvel_arrivant  # noqa: E402
@@ -546,6 +551,9 @@ class ResolutionAG(BaseModel):
     texte: str = Field("", max_length=4000)
     majorite: str = Field("24", description="24 | 25 | 26 | info (point d'information, sans vote)")
     cle: str = Field("generales", description="Clé de répartition : seuls les copropriétaires concernés votent")
+    montant: Decimal | None = Field(None, gt=0, le=10_000_000, description="Montant TTC engagé, s'il y en a un")
+    echeances: int = Field(1, ge=1, le=12, description="Nombre d'appels de fonds pour ce montant")
+    cout: Literal["budget", "fonds_travaux"] | None = Field(None, description="Montant tiré de la fiche")
 
 
 class NouvelleAG(BaseModel):
@@ -626,6 +634,60 @@ def formulaire_vpc(copro: str = Copro, ag_id: str = AgId, cid: str = Coproprieta
     except assemblee.AGInvalide as e:
         raise HTTPException(404, str(e))
     return FileResponse(chemin, media_type="application/pdf", filename=chemin.name)
+
+
+@app.get("/copros/{copro}/ag/{ag_id}/votre-part/{cid}", dependencies=[Depends(verifier_cle)])
+def votre_part_pdf(copro: str = Copro, ag_id: str = AgId, cid: str = Coproprietaire) -> FileResponse:
+    """« Ce que chaque résolution vous coûterait » : à joindre à la convocation."""
+    fiche, a = fiche_de(copro), ag_de(copro, ag_id)
+    if not any(c["id"] == cid for c in fiche["coproprietaires"]):
+        raise HTTPException(404, f"Copropriétaire inconnu : {cid}")
+    sortie = DOSSIER_SORTIE / copro / "ag" / ag_id
+    sortie.mkdir(parents=True, exist_ok=True)
+    chemin = quote_part.generer_pdf(fiche, a, cid, sortie / f"votre_part_{cid}.pdf")
+    return FileResponse(chemin, media_type="application/pdf", filename=chemin.name)
+
+
+def _depouillement(fiche: dict, a: dict) -> dict | None:
+    if not a.get("depouillement"):
+        return None
+    return assemblee.depouiller(fiche, a, a["depouillement"]["votes"], a["depouillement"]["amendees"])
+
+
+@app.get("/copros/{copro}/ag/{ag_id}/en-bref/{cid}", dependencies=[Depends(verifier_cle)])
+def ag_en_bref(copro: str = Copro, ag_id: str = AgId, cid: str = Coproprietaire) -> FileResponse:
+    """« L'AG en bref » : avant l'AG, ce qui sera décidé ; après le dépouillement, ce qui l'a été."""
+    fiche, a = fiche_de(copro), ag_de(copro, ag_id)
+    if not any(c["id"] == cid for c in fiche["coproprietaires"]):
+        raise HTTPException(404, f"Copropriétaire inconnu : {cid}")
+    dep = _depouillement(fiche, a)
+    sortie = DOSSIER_SORTIE / copro / "ag" / ag_id
+    sortie.mkdir(parents=True, exist_ok=True)
+    nom = f"ag_en_bref_{'apres' if dep else 'avant'}_{cid}.pdf"
+    chemin = ag_bref.generer_pdf(fiche, a, cid, sortie / nom, dep)
+    return FileResponse(chemin, media_type="application/pdf", filename=chemin.name)
+
+
+@app.get("/copros/{copro}/ag/{ag_id}/echeances/{cid}.ics", dependencies=[Depends(verifier_cle)])
+def echeances_votees(copro: str = Copro, ag_id: str = AgId, cid: str = Coproprietaire) -> Response:
+    """Les échéances des dépenses adoptées, pour l'agenda du copropriétaire."""
+    fiche, a = fiche_de(copro), ag_de(copro, ag_id)
+    if not any(c["id"] == cid for c in fiche["coproprietaires"]):
+        raise HTTPException(404, f"Copropriétaire inconnu : {cid}")
+    dep = _depouillement(fiche, a)
+    if dep is None:
+        raise HTTPException(409, "Le dépouillement n'a pas encore été fait : les échéances dépendent des votes")
+    ics = quote_part.generer_ics(fiche, a, dep, cid, copro)
+    return Response(ics, media_type="text/calendar; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="appels-de-fonds-{ag_id}-{cid}.ics"'})
+
+
+@app.get("/copros/{copro}/ag/{ag_id}/votre-part", dependencies=[Depends(verifier_cle)])
+def votre_part_json(copro: str = Copro, ag_id: str = AgId) -> dict:
+    """La part de chaque copropriétaire, résolution par résolution."""
+    fiche, a = fiche_de(copro), ag_de(copro, ag_id)
+    return {"avertissement": quote_part.AVERTISSEMENT,
+            "coproprietaires": {c["id"]: quote_part.votre_part(fiche, a, c["id"]) for c in fiche["coproprietaires"]}}
 
 
 class FormulaireRecu(BaseModel):

@@ -24,7 +24,8 @@
       <tbody>
       {% for r in a.resolutions %}
       <tr><td class="nombre">{{ r.num }}</td>
-        <td>{{ r.titre }}<br><span class="discret">{% if r.majorite == "info" %}Point d'information, sans vote{% else %}Article {{ r.majorite }}{% endif %}</span></td></tr>
+        <td>{{ r.titre }}<br><span class="discret">{% if r.majorite == "info" %}Point d'information, sans vote{% else %}Article {{ r.majorite }}{% endif %}
+          {%- set c = couts.get(r.num) %}{% if c %} · {{ c.total|euros }}{% if c.nature == "annuel" %} par an{% if c.source == "budget_actuel" %} (budget actuel){% endif %}{% elif c.echeances > 1 %} en {{ c.echeances }} appels{% endif %}{% endif %}</span></td></tr>
       {% endfor %}
       </tbody>
     </table>
@@ -43,10 +44,14 @@
       <a class="bouton secondaire" href="/copros/{{ copro }}/ag/{{ a.id }}/agenda.ics">Fichier pour l'agenda</a>
       <a class="bouton secondaire" href="/copros/{{ copro }}/ag/{{ a.id }}/feuille-presence.pdf" target="_blank">Feuille de présence</a>
       {% if a.depouillement %}<a class="bouton" href="/copros/{{ copro }}/ag/{{ a.id }}/pv.pdf" target="_blank">Procès-verbal</a>{% endif %}
-      <form method="get" target="_blank" onsubmit="this.action='/copros/{{ copro }}/ag/{{ a.id }}/formulaires/'+this.cid.value" class="formulaire" style="padding:.8rem">
-        <label>Formulaire de vote par correspondance de
+      <form method="get" target="_blank" class="formulaire documents-copro" style="padding:.8rem"
+            onsubmit="var b=event.submitter;this.action='/copros/{{ copro }}/ag/{{ a.id }}/'+b.dataset.chemin.replace('ID',this.cid.value)">
+        <label>Documents de
           <select name="cid">{% for c in coproprietaires %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}</select></label>
-        <button type="submit" class="secondaire">Ouvrir le formulaire</button>
+        <button type="submit" class="secondaire" data-chemin="en-bref/ID">{% if a.depouillement %}Ce qu'a décidé l'AG, en bref{% else %}L'AG en bref{% endif %}</button>
+        <button type="submit" class="secondaire" data-chemin="formulaires/ID">Formulaire de vote par correspondance</button>
+        {% if couts %}<button type="submit" class="secondaire" data-chemin="votre-part/ID">Ce que chaque résolution lui coûterait</button>{% endif %}
+        {% if a.depouillement and couts %}<button type="submit" class="secondaire" data-chemin="echeances/ID.ics">Échéances votées, pour son agenda</button>{% endif %}
       </form>
     </div>
   </aside>
