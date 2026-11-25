@@ -23,6 +23,7 @@
                           ("signalements", "/signalements", "Signalements"),
                           ("coproprietaires", "/coproprietaires", "Copropriétaires"), ("documents", "/documents", "Documents")] %}
       {% set rubriques = rubriques[:8] + rubriques_extensions + rubriques[8:] %}
+      {% if petite_copro %}{% set rubriques = rubriques[:5] + [("consultations", "/consultations", "Consultations")] + rubriques[5:] %}{% endif %}
       {% for cle, chemin, libelle in rubriques %}
       <a href="/app/{{ copro }}{{ chemin }}" {% if onglet == cle %}aria-current="page"{% endif %}>{{ libelle }}</a>
       {% endfor %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block titre %}Consultations{% endblock %}
+{% block contenu %}
+<h1>Décider sans réunir d'assemblée</h1>
+<p class="chapeau">{{ regime.detail }}</p>
+{% if regime.applicable %}
+<p>Toute décision peut être prise par consultation des copropriétaires, <strong>à l'unanimité</strong>, sans convoquer d'assemblée générale, sauf le vote du budget prévisionnel et l'approbation des comptes : ceux-là restent votés lors de l'AG annuelle. La décision n'est prise que si chaque copropriétaire répond, et vote pour.</p>
+
+{% if liste %}
+<h2>Consultations</h2>
+<table class="table">
+  <thead><tr><th>Question</th><th>Réponses avant le</th><th>État</th></tr></thead>
+  <tbody>
+    {% for c in liste %}
+    <tr>
+      <td><a href="/app/{{ copro }}/consultations/{{ c.id }}">{{ c.titre }}</a>{% if c.a_organiser and not c.close_le %}<br><span class="discret">demandée par un copropriétaire : à organiser avant le {{ c.a_organiser|date_fr }}</span>{% endif %}</td>
+      <td class="nombre">{{ c.repondre_avant|date_fr }}</td>
+      <td>{{ c.res.texte }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+
+<h2 id="nouvelle">Nouvelle consultation</h2>
+<form class="formulaire" method="post" action="/app/{{ copro }}/consultations">
+  <label>Question <input name="titre" required maxlength="160" placeholder="Remplacement de la boîte aux lettres collective"></label>
+  <label>Décision proposée <span class="discret">le texte sur lequel chacun vote</span>
+    <textarea name="resolution" rows="5" required maxlength="4000" placeholder="Les copropriétaires décident de remplacer la boîte aux lettres collective par le modèle du devis joint, pour 450 € TTC, réparti en charges générales."></textarea></label>
+  <div class="champs">
+    <label>Réponses attendues avant le <input type="date" name="repondre_avant" required value="{{ date_defaut }}"></label>
+    <label>Demandée par un copropriétaire <span class="discret">facultatif</span>
+      <select name="demandee_par"><option value="">Non, à l'initiative du syndic</option>
+        {% for x in coproprietaires %}<option value="{{ x.id }}">{{ x.nom }}</option>{% endfor %}</select></label>
+    <label>Demande reçue le <span class="discret">si demandée</span> <input type="date" name="demandee_le"></label>
+  </div>
+  <div><button type="submit">Ouvrir la consultation</button>
+    <span class="discret">Quand un copropriétaire la demande, la consultation s'organise dans les 21 jours (décret du 17 mars 1967, art. 42-4).</span></div>
+</form>
+{% else %}
+<div class="vide">Les décisions se prennent en assemblée générale. Le régime des petites copropriétés vise celles qui comptent au plus cinq lots à usage de logements, de bureaux ou de commerces, ou dont le budget prévisionnel moyen sur trois exercices est inférieur à 15 000 €.</div>
+{% endif %}
+<p class="discret">Loi du 10 juillet 1965, art. 41-8 et suivants ; décret du 17 mars 1967, art. 42-3 à 42-5. Ce n'est pas un conseil juridique : l'ADIL répond gratuitement.</p>
+{% endblock %}

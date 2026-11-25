@@ -111,7 +111,8 @@ def page(request: Request, gabarit: str, copro: str | None = None, **ctx) -> HTM
     ctx.setdefault("onglet", gabarit.split(".")[0])
     return templates.TemplateResponse(request, gabarit, {
         "copro": copro, "fiche": fiche, "copros": A.lister_copros(), "jour": aujourdhui(request),
-        "jour_demo": request.session.get("au"), "message": request.session.pop("message", None), **ctx})
+        "jour_demo": request.session.get("au"), "message": request.session.pop("message", None),
+        "petite_copro": bool(fiche) and A.consultation.regime(fiche)["applicable"], **ctx})
 
 
 def exiger(request: Request, copro: str | None = None) -> None:
@@ -1251,3 +1252,121 @@ def bulletin_partage(request: Request, copro: str, action: str = Form(...)):
     return retour(f"/app/{copro}/bulletin#partage", {"activer": "Lien public activé.", "couper": "Lien public coupé.",
                                                       "renouveler": "Nouveau lien créé : l'ancien ne fonctionne plus."}[action],
                   request)
+
+
+# --------------------------------------------------------------------------- #
+# Petites copropriétés : consultation écrite à l'unanimité
+# --------------------------------------------------------------------------- #
+def _consultation(copro: str, cid: str) -> dict:
+    try:
+        return A.consultation.charger(A.DOSSIER_DATA, copro, cid)
+    except A.consultation.ConsultationInvalide:
+        raise HTTPException(404, "Consultation inconnue")
+
+
+@routeur.get("/{copro}/consultations", response_class=HTMLResponse)
+def consultations_page(request: Request, copro: str):
+    exiger(request, copro)
+    C = A.consultation
+    fiche = A.fiche_de(copro)
+    regime = C.regime(fiche, A.compta.budgets(fiche, A.DOSSIER_DATA, copro))
+    liste = []
+    for c in C.lister(A.DOSSIER_DATA, copro):
+        liste.append({**c, "res": C.resultat(c), "a_organiser": C.a_organiser(c)})
+    jour = aujourdhui(request)
+    return page(request, "consultations.html", copro, regime=regime, liste=liste,
+                coproprietaires=sorted(fiche["coproprietaires"], key=lambda x: x["nom"]),
+                date_defaut=(jour + timedelta(days=15)).isoformat())
+
+
+@routeur.post("/{copro}/consultations")
+def consultations_ouvrir(request: Request, copro: str, titre: str = Form(...), resolution: str = Form(...),
+                         repondre_avant: date = Form(...), demandee_par: str = Form(""),
+                         demandee_le: date | None = Form(None)):
+    exiger(request, copro)
+    C = A.consultation
+    fiche = A.fiche_de(copro)
+    try:
+        c, jetons = C.ouvrir(A.DOSSIER_DATA, copro, fiche, titre, resolution, repondre_avant,
+                             A.compta.budgets(fiche, A.DOSSIER_DATA, copro), demandee_par or None, demandee_le)
+    except C.ConsultationInvalide as e:
+        return retour(f"/app/{copro}/consultations#nouvelle", f"Consultation non ouverte : {e}", request)
+    # les liens ne sont montrés qu'une fois : seule leur empreinte est conservée
+    request.session["liens"] = {e: A.lien_consultation(copro, c["id"], j) for e, j in jetons.items()}
+    return retour(f"/app/{copro}/consultations/{c['id']}", "Consultation ouverte. Envoyez à chacun son lien "
+                  "personnel ; ceux qui reçoivent leurs documents par courrier ont un bulletin à imprimer.", request)
+
+
+@routeur.get("/{copro}/consultations/{cid}", response_class=HTMLResponse)
+def consultation_detail(request: Request, copro: str, cid: str):
+    exiger(request, copro)
+    C = A.consultation
+    c = _consultation(copro, cid)
+    fiche = A.fiche_de(copro)
+    copros = {x["id"]: x for x in fiche["coproprietaires"]}
+    return page(request, "consultation.html", copro, onglet="consultations", c=c, res=C.resultat(c),
+                copros=copros, choix=C.CHOIX, modes=C.MODES, ouverte=C.ouverte(c),
+                a_organiser=C.a_organiser(c), liens=request.session.pop("liens", None))
+
+
+@routeur.post("/{copro}/consultations/{cid}/lien/{electeur}")
+def consultation_lien(request: Request, copro: str, cid: str, electeur: str):
+    exiger(request, copro)
+    try:
+        j = A.consultation.renouveler_jeton(A.DOSSIER_DATA, copro, cid, electeur)
+    except A.consultation.ConsultationInvalide as e:
+        raise HTTPException(404, str(e))
+    request.session["liens"] = {electeur: A.lien_consultation(copro, cid, j)}
+    return retour(f"/app/{copro}/consultations/{cid}", "Nouveau lien créé : l'ancien ne fonctionne plus.", request)
+
+
+@routeur.post("/{copro}/consultations/{cid}/vote")
+def consultation_saisie(request: Request, copro: str, cid: str, electeur: str = Form(...), choix: str = Form(...),
+                        mode: str = Form(...), piece: str = Form("")):
+    """Vote reçu par courrier, en personne ou par délégation : saisi par le syndic, avec la pièce."""
+    exiger(request, copro)
+    C = A.consultation
+    c = _consultation(copro, cid)
+    if mode == "lien":
+        return retour(f"/app/{copro}/consultations/{cid}", "Le vote par lien se fait par le copropriétaire lui-même.",
+                      request)
+    try:
+        C.voter(c, electeur, choix, mode, piece)
+    except C.ConsultationInvalide as e:
+        return retour(f"/app/{copro}/consultations/{cid}", f"Vote non enregistré : {e}", request)
+    C.sauver(A.DOSSIER_DATA, copro, c)
+    return retour(f"/app/{copro}/consultations/{cid}", "Vote enregistré. Conservez l'écrit : il sera annexé au "
+                  "procès-verbal.", request)
+
+
+@routeur.post("/{copro}/consultations/{cid}/cloture")
+def consultation_cloture(request: Request, copro: str, cid: str):
+    exiger(request, copro)
+    try:
+        A.consultation.clore(A.DOSSIER_DATA, copro, cid, None)
+    except A.consultation.ConsultationInvalide as e:
+        return retour(f"/app/{copro}/consultations/{cid}", str(e), request)
+    return retour(f"/app/{copro}/consultations/{cid}", "Consultation close : le procès-verbal est prêt à signer.",
+                  request)
+
+
+@routeur.get("/{copro}/consultations/{cid}/bulletin/{electeur}.pdf")
+def consultation_bulletin(request: Request, copro: str, cid: str, electeur: str):
+    exiger(request, copro)
+    c = _consultation(copro, cid)
+    if electeur not in c["electeurs"]:
+        raise HTTPException(404)
+    with tempfile.TemporaryDirectory() as d:
+        pdf = A.consultation.bulletin_pdf(A.fiche_de(copro), c, electeur, Path(d) / "b.pdf").read_bytes()
+    return Response(pdf, media_type="application/pdf", headers={
+        "Content-Disposition": f'inline; filename="consultation_{cid}_{electeur}.pdf"', "Cache-Control": "no-store"})
+
+
+@routeur.get("/{copro}/consultations/{cid}/proces-verbal.pdf")
+def consultation_pv(request: Request, copro: str, cid: str):
+    exiger(request, copro)
+    c = _consultation(copro, cid)
+    with tempfile.TemporaryDirectory() as d:
+        pdf = A.consultation.proces_verbal_pdf(A.fiche_de(copro), c, Path(d) / "pv.pdf").read_bytes()
+    return Response(pdf, media_type="application/pdf", headers={
+        "Content-Disposition": f'inline; filename="pv_consultation_{cid}.pdf"', "Cache-Control": "no-store"})

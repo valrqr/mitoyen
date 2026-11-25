@@ -1,0 +1,198 @@
+# Fiche d'une copropriété FICTIVE (exemple et tests) : une petite copropriété de 4 lots principaux,
+# gérée par un syndic bénévole. Elle relève du régime des petites copropriétés
+# (loi du 10 juillet 1965, art. 41-8 et suivants). Aucune donnée réelle.
+version_schema: 1
+copropriete:
+  nom: Résidence Les Tilleuls
+  adresse: 3 rue des Exemples, 06000 Nice
+  immatriculation_registre: AA0-000-001
+  destination: residentielle
+  date_reglement: 1987-03-12
+  nb_lots_principaux: 4
+  nb_lots_total: 6
+  batiments:
+  - A
+  periode_construction: 1961 à 1974
+  chauffage: individuel
+  energie_chauffage_collectif: null
+  personnel_employe: false
+  siret_syndicat: null
+gouvernance:
+  mode_gestion: benevole
+  syndic:
+    coproprietaire_id: TL01
+    debut_mandat: 2027-01-01
+    fin_mandat: 2029-12-31
+  conseil_syndical: []
+  exercice:
+    debut: 01-01
+    fin: 12-31
+  ag_annuelle_delai_mois: 6
+cles_repartition:
+  generales:
+    libelle: Charges générales
+    base: 1000
+coproprietaires:
+- id: TL01
+  nom: Lambert Sophie
+  email: sophie.lambert@exemple.fr
+  envoi: email
+- id: TL02
+  nom: Robert Karim
+  email: karim.robert@exemple.fr
+  envoi: email
+- id: TL03
+  nom: Mercier Jeanne
+  email: null
+  envoi: courrier
+  grands_caracteres: true
+lots:
+- numero: 1
+  type: appartement
+  desc: T2 RDC
+  etage: 0
+  proprietaire: TL01
+  tantiemes:
+    generales: 220
+- numero: 2
+  type: appartement
+  desc: T3 1er
+  etage: 1
+  proprietaire: TL02
+  tantiemes:
+    generales: 290
+- numero: 3
+  type: appartement
+  desc: T3 2e
+  etage: 2
+  proprietaire: TL03
+  tantiemes:
+    generales: 290
+- numero: 4
+  type: appartement
+  desc: Studio 2e
+  etage: 2
+  proprietaire: TL02
+  tantiemes:
+    generales: 150
+- numero: 5
+  type: cave
+  desc: Cave 1
+  etage: -1
+  proprietaire: TL01
+  tantiemes:
+    generales: 25
+- numero: 6
+  type: cave
+  desc: Cave 2
+  etage: -1
+  proprietaire: TL03
+  tantiemes:
+    generales: 25
+equipements:
+- id: interphone
+  libelle: Interphone
+  cle: generales
+  contrat: null
+contrats:
+- id: CT01
+  objet: Assurance multirisque immeuble
+  prestataire: Assureur Exemple
+  montant_annuel: 1400
+  echeance: 2027-12-31
+  preavis_mois: 2
+  tacite_reconduction: true
+budget_previsionnel:
+  exercice: 2027
+  postes:
+  - libelle: Assurance immeuble
+    cle: generales
+    montant: 1400
+  - libelle: Électricité parties communes
+    cle: generales
+    montant: 300
+  - libelle: Ménage de l'escalier
+    cle: generales
+    montant: 1800
+  - libelle: Petites réparations
+    cle: generales
+    montant: 600
+  - libelle: Frais bancaires
+    cle: generales
+    montant: 100
+comptes_approuves:
+  exercice: 2025
+  debut: 2025-01-01
+  fin: 2025-12-31
+  ag_approbation: 2026-05-20
+  charges_courantes: 4050.0
+  charges_travaux_exceptionnelles: 0
+  dettes_fournisseurs: 0.0
+  impayes: 0.0
+  nb_debiteurs_plus_300: 0
+  fonds_travaux: 2100.0
+vie_immeuble:
+- theme: Ordures ménagères
+  texte: Les bacs sont dans le local poubelles du rez-de-chaussée. Verre et cartons pliés dans les bacs de tri.
+- theme: Encombrants
+  texte: 'Rien dans les parties communes ni au sous-sol : la ville les enlève gratuitement sur rendez-vous.'
+- theme: Tranquillité
+  texte: Travaux bruyants en semaine de 8h à 19h et le samedi de 9h à 18h. Le hall et l'escalier ne sont pas des
+    lieux de stockage.
+reglement:
+  activite_commerciale_interdite: true
+  meubles_tourisme: non_precise
+recouvrement:
+  seuil: 5
+  rappel_jours: 15
+  relance_jours: 30
+  mise_en_demeure_jours: 45
+  intervalle_min_jours: 15
+fonds_travaux:
+  cle: generales
+  cotisation_annuelle: 300
+  solde:
+    montant: 2400
+    au: 2026-12-31
+seuils:
+  consultation_conseil_syndical: 1500
+  mise_en_concurrence: 3000
+  delegation_conseil_syndical:
+    active: false
+    plafond_par_depense: null
+appels_de_fonds:
+  periodicite: trimestrielle
+  dates_exigibilite:
+  - 01-01
+  - 04-01
+  - 07-01
+  - 10-01
+  envoi_jours_avant: 21
+  compte_separe:
+    titulaire: Syndicat des copropriétaires Résidence Les Tilleuls
+    iban: FR76 0000 0000 0000 0000 0000 000
+    bic: EXEMFRPPXXX
+    ics: FR00ZZZ000000
+  reference_virement: TILLEULS-{exercice}-T{trimestre}-{coproprietaire}
+diagnostics:
+- id: pppt
+  libelle: Projet de plan pluriannuel de travaux
+  realise_le: null
+  validite_ans: 10
+- id: dpe_collectif
+  libelle: DPE collectif
+  realise_le: null
+  validite_ans: 10
+- id: amiante
+  libelle: Dossier technique amiante
+  realise_le: 2019-05-14
+  validite_ans: null
+modules_actifs:
+- memoire_documentaire
+- appels_de_fonds
+- relances_impayes
+- preparation_ag
+- echeancier_legal
+- tri_mails
+- devis_travaux
+- plan_travaux

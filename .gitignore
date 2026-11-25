@@ -8,6 +8,7 @@ data/
 # Fiches de vraies copros : seule la démo fictive est versionnée
 config/*.yaml
 !config/mimosas.yaml
+!config/tilleuls.yaml
 
 __pycache__/
 *.pyc

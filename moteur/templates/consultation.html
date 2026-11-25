@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block titre %}{{ c.titre }}{% endblock %}
+{% block contenu %}
+<p><a href="/app/{{ copro }}/consultations">← Toutes les consultations</a></p>
+<h1>{{ c.titre }}</h1>
+<p class="chapeau">Réponses attendues avant le {{ c.repondre_avant|date_fr }}.{% if a_organiser %} Demandée par {{ copros[c.demande.par].nom }} le {{ c.demande.le|date_fr }} : à organiser avant le {{ a_organiser|date_fr }}.{% endif %}</p>
+<div class="bref-decision"><strong>Décision proposée</strong><p>{{ c.resolution }}</p></div>
+
+<p class="etat-consultation etat-{{ res.statut }}"><strong>{{ res.texte }}</strong>{% if res.suite %} {{ res.suite }}{% endif %}</p>
+
+{% if liens %}
+<div class="message">
+  <p><strong>Les liens personnels</strong>, à envoyer à chacun. Ils ne s'afficheront plus : copiez-les maintenant.</p>
+  <ul class="liens-perso">{% for e, l in liens.items() %}<li>{{ copros[e].nom }} : <code>{{ l }}</code></li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<table class="table">
+  <thead><tr><th>Copropriétaire</th><th>Vote</th><th>Comment</th><th></th></tr></thead>
+  <tbody>
+    {% for e, v in c.electeurs.items() %}
+    <tr>
+      <td>{{ copros[e].nom }}{% if copros[e].envoi == "courrier" %}<br><span class="discret">reçoit ses documents par courrier</span>{% endif %}</td>
+      <td>{{ choix[v.choix] if v.choix else "pas encore" }}</td>
+      <td>{% if v.mode %}{{ modes[v.mode] }}, le {{ v.le[:10]|date_fr }}{% if v.piece %}<br><span class="discret">{{ v.piece }}</span>{% endif %}{% else %}—{% endif %}</td>
+      <td>{% if not v.choix and ouverte %}
+        <a href="/app/{{ copro }}/consultations/{{ c.id }}/bulletin/{{ e }}.pdf" target="_blank">Bulletin papier</a>
+        <form class="decision" method="post" action="/app/{{ copro }}/consultations/{{ c.id }}/lien/{{ e }}"><button class="lien" type="submit">Nouveau lien</button></form>
+      {% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% if ouverte and res.attente %}
+<h2>Saisir un vote reçu</h2>
+<p>Par courrier signé, par e-mail, ou exprimé en personne : notez-le ici et conservez l'écrit, il sera annexé au procès-verbal.</p>
+<form class="formulaire" method="post" action="/app/{{ copro }}/consultations/{{ c.id }}/vote">
+  <div class="champs">
+    <label>Copropriétaire <select name="electeur">{% for e in res.attente %}<option value="{{ e }}">{{ copros[e].nom }}</option>{% endfor %}</select></label>
+    <label>Vote <select name="choix">{% for k, l in choix.items() %}<option value="{{ k }}">{{ l }}</option>{% endfor %}</select></label>
+    <label>Exprimé <select name="mode">{% for k, l in modes.items() if k != "lien" %}<option value="{{ k }}">{{ l }}</option>{% endfor %}</select></label>
+  </div>
+  <label>L'écrit conservé <span class="discret">facultatif</span> <input name="piece" maxlength="200" placeholder="Bulletin signé reçu le 05/03"></label>
+  <div><button type="submit">Enregistrer le vote</button></div>
+</form>
+{% endif %}
+
+<div class="actions-vente">
+  {% if not c.close_le and res.statut != "en_cours" %}
+  <form method="post" action="/app/{{ copro }}/consultations/{{ c.id }}/cloture"><button type="submit">Clore la consultation</button></form>
+  {% endif %}
+  <a class="bouton secondaire" href="/app/{{ copro }}/consultations/{{ c.id }}/proces-verbal.pdf" target="_blank">Procès-verbal (PDF)</a>
+</div>
+<p class="discret">Le procès-verbal, signé par le syndic, rejoint le registre des procès-verbaux d'AG avec les écrits des votes (décret du 17 mars 1967, art. 42-5).</p>
+{% endblock %}

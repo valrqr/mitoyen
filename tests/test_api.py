@@ -74,7 +74,7 @@ def test_echeancier_ag_et_urgence():
 
 def test_echeancier_global():
     r = c.get("/echeancier", params={"au": "2027-02-15", "horizon": 60}, headers=H).json()
-    assert r["nb_copros"] == 1 and r["rapports"][0]["copro"] == "mimosas"
+    assert r["nb_copros"] == 2 and [x["copro"] for x in r["rapports"]] == ["mimosas", "tilleuls"]
     assert c.get("/echeancier", params={"horizon": 0}, headers=H).status_code == 422
 
 
@@ -1646,3 +1646,41 @@ def test_interface_bulletin_de_sante_et_lien_public():
     n.post("/app/mimosas/bulletin/partage", data={"action": "couper"})
     assert public.get(lien).status_code == 404
     assert n.post("/app/mimosas/bulletin/partage", data={"action": "autre"}).status_code == 400
+
+
+def test_interface_consultation_petite_copropriete():
+    import re
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    n.get("/app/tilleuls", params={"au": "2027-03-01"})
+    t = n.get("/app/tilleuls/consultations").text
+    assert "régime des petites copropriétés" in t and "Ouvrir la consultation" in t and "/consultations\"" in t
+    # La grande copropriété n'a ni l'entrée de menu, ni la possibilité d'ouvrir une consultation
+    t = n.get("/app/mimosas/consultations").text
+    assert "applique pas" in t and "Ouvrir la consultation" not in t
+    assert "Consultations</a>" not in n.get("/app/mimosas").text
+    t = n.post("/app/tilleuls/consultations", data={"titre": "Approbation des comptes 2026", "resolution": "…",
+                                                    "repondre_avant": "2027-03-20"}).text
+    assert "Consultation non ouverte" in t
+    t = n.post("/app/tilleuls/consultations", data={
+        "titre": "Remplacement de la boîte aux lettres collective",
+        "resolution": "Les copropriétaires décident de remplacer la boîte aux lettres, pour 450 € TTC.",
+        "repondre_avant": "2027-03-20", "demandee_par": "TL02", "demandee_le": "2027-02-25"}).text
+    assert "Consultation ouverte" in t and "à organiser avant le 18 mars 2027" in t
+    liens = dict(re.findall(r"<li>([^<:]+?) : <code>http[^<]*?(/consulter/tilleuls/C001/[A-Za-z0-9_-]+)</code>", t))
+    assert len(liens) == 3
+    assert "les liens personnels" not in n.get("/app/tilleuls/consultations/C001").text.lower()   # montrés une fois
+    public = _navigateur()
+    lien = liens["Lambert Sophie"]
+    assert "Enregistrer mon vote" in public.get(lien).text
+    assert "votre vote est enregistré" in public.post(lien, data={"choix": "pour"}).text
+    assert public.post(lien, data={"choix": "contre"}).status_code == 409                       # une seule fois
+    public.post(liens["Robert Karim"], data={"choix": "pour"})
+    # Le vote papier de Mme Mercier, saisi par le syndic
+    t = n.post("/app/tilleuls/consultations/C001/vote", data={"electeur": "TL03", "choix": "pour",
+                                                             "mode": "courrier", "piece": "Bulletin signé reçu"}).text
+    assert "Décision prise à l&#39;unanimité" in t or "Décision prise à l'unanimité" in t
+    assert n.get("/app/tilleuls/consultations/C001/bulletin/TL03.pdf").content[:4] == b"%PDF"
+    assert "Consultation close" in n.post("/app/tilleuls/consultations/C001/cloture").text
+    assert n.get("/app/tilleuls/consultations/C001/proces-verbal.pdf").content[:4] == b"%PDF"
+    assert public.get("/consulter/tilleuls/C001/" + "x" * 24).status_code == 404

@@ -110,3 +110,31 @@ def page_sondage(copropriete: str, dossier: dict, sondage: dict, cid: str, nom: 
 
 def page_erreur(message: str) -> str:
     return page("Lien invalide", f'<h1>Lien invalide</h1><p class="erreur">{escape(message)}</p>')
+
+
+def page_consultation(copropriete: str, c: dict, nom: str, choix: str | None, vote_le: str | None,
+                      repondre_avant: str, ouverte: bool, message: str | None = None) -> str:
+    """Consultation écrite d'une petite copropriété : un vote, une seule fois, à l'unanimité."""
+    from datetime import date as _d
+    limite = _d.fromisoformat(repondre_avant).strftime("%d/%m/%Y")
+    h = [f'<h1>{escape(c["titre"])}</h1>',
+         f'<p class="sous">{escape(copropriete)} · consultation des copropriétaires · {escape(nom)}</p>']
+    if message:
+        h.append(f'<p class="ok">{escape(message)}</p>')
+    h.append(f'<div class="bref"><strong>Décision proposée</strong><br>{escape(c["resolution"]).replace(chr(10), "<br>")}'
+             '<small>Elle n’est prise que si tous les copropriétaires votent pour. Une abstention ou une absence de '
+             'réponse l’empêche ; la question peut alors être soumise à une assemblée générale.</small></div>')
+    libelles = {"pour": "Pour", "contre": "Contre", "abstention": "Abstention"}
+    if choix:
+        h.append(f'<p class="ok">Votre vote : <strong>{libelles.get(choix, choix)}</strong>, enregistré le '
+                 f'{_date(vote_le)}. Il ne peut plus être modifié.</p>')
+    elif not ouverte:
+        h.append('<p class="erreur">La consultation est close.</p>')
+    else:
+        opts = "".join(f'<label class="option"><input type="radio" name="choix" value="{v}" required>'
+                       f'<span class="titre">{l}</span></label>' for v, l in libelles.items())
+        h.append(f'<p class="note">Réponse attendue au plus tard le {limite}. Votre vote est définitif : '
+                 f'vérifiez-le avant de l’enregistrer.</p>'
+                 f'<form method="post"><fieldset><legend>Votre vote</legend>{opts}</fieldset>'
+                 f'<button type="submit">Enregistrer mon vote</button></form>')
+    return page(c["titre"], "".join(h))

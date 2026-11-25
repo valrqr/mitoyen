@@ -117,6 +117,7 @@ import compta  # noqa: E402
 import annexes  # noqa: E402
 import etat_date  # noqa: E402
 import bulletin  # noqa: E402
+import consultation  # noqa: E402
 import rappel_ag  # noqa: E402
 import reglement  # noqa: E402
 import meubles_tourisme  # noqa: E402
@@ -1377,6 +1378,50 @@ def page_bulletin_public(request: Request, copro: str = Copro, jeton: str = Jeto
     b = bulletin.depuis_mitoyen(fiche_de(copro), DOSSIER_SORTIE, DOSSIER_DATA, copro, date.today())
     return interface.templates.TemplateResponse(request, "bulletin_public.html", {"b": b},
                                                 headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
+
+
+def lien_consultation(copro: str, cid: str, jeton: str) -> str:
+    return f"{URL_PUBLIQUE}/consulter/{copro}/{cid}/{jeton}"
+
+
+def _page_consultation(copro: str, cid: str, jeton: str, message: str | None = None, statut: int = 200):
+    try:
+        c = consultation.charger(DOSSIER_DATA, copro, cid)
+    except consultation.ConsultationInvalide:
+        c = None
+    e = consultation.trouver(c, jeton) if c else None
+    if not e:
+        return HTMLResponse(page_vote.page_erreur("Ce lien n'est pas valide. Vérifiez qu'il est complet, ou "
+                                                  "demandez-en un nouveau au syndic."), status_code=404)
+    fiche = fiche_de(copro)
+    nom = next(x["nom"] for x in fiche["coproprietaires"] if x["id"] == e)
+    v = c["electeurs"][e]
+    html = page_vote.page_consultation(fiche["copropriete"]["nom"], c, nom, v["choix"], v["le"], c["repondre_avant"],
+                                       consultation.ouverte(c), message)
+    return HTMLResponse(html, status_code=statut, headers={"Cache-Control": "no-store", "Referrer-Policy": "no-referrer"})
+
+
+@app.get("/consulter/{copro}/{cid}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
+def page_consulter(copro: str = Copro, cid: str = PathParam(..., pattern=r"^C\d{3}$"), jeton: str = Jeton):
+    return _page_consultation(copro, cid, jeton)
+
+
+@app.post("/consulter/{copro}/{cid}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
+def voter_consultation(copro: str = Copro, cid: str = PathParam(..., pattern=r"^C\d{3}$"), jeton: str = Jeton,
+                       choix: str = Form(..., max_length=20)):
+    try:
+        c = consultation.charger(DOSSIER_DATA, copro, cid)
+    except consultation.ConsultationInvalide:
+        return _page_consultation(copro, cid, jeton)
+    e = consultation.trouver(c, jeton)
+    if not e:
+        return _page_consultation(copro, cid, jeton)
+    try:
+        consultation.voter(c, e, choix, "lien")
+    except consultation.ConsultationInvalide as err:
+        return HTMLResponse(page_vote.page_erreur(str(err)), status_code=409)
+    consultation.sauver(DOSSIER_DATA, copro, c)
+    return _page_consultation(copro, cid, jeton, "Merci, votre vote est enregistré.")
 
 
 @app.get("/signaler/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
