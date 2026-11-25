@@ -43,12 +43,14 @@
         <option value="travaux_prives">Des travaux chez moi qui touchent les parties communes ou l’aspect extérieur</option>
         <option value="travaux_communs">Des travaux sur les parties communes</option>
         <option value="partie_commune">Utiliser une partie commune</option>
+        <option value="achat_partie_commune">Acheter une partie commune (combles, fond de couloir…)</option>
         <option value="autre">Autre question</option></select></label>
       <p class="aide-type discret" id="aide-type"></p>
       <div class="deux">
         <label class="pleine">En quelques mots <input type="text" name="objet" required maxlength="120" placeholder="Pose d’un climatiseur sur le balcon"></label>
         <label class="pleine">Description <span class="discret">ce qui sera fait, où, comment</span> <textarea name="description" rows="3" maxlength="1200"></textarea></label>
-        <label id="champ-montant">Montant estimé TTC <span class="discret">facultatif</span> <input type="text" inputmode="decimal" name="montant"></label>
+        <label id="champ-montant"><span id="libelle-montant">Montant estimé TTC</span> <span class="discret">facultatif</span> <input type="text" inputmode="decimal" name="montant"></label>
+        <p class="aide-type alerte-prix pleine" id="alerte-prix" hidden>Un prix très bas doit être justifié par une estimation et des contreparties réelles. Les notaires refusent de plus en plus les ventes à l’euro symbolique : la vente risque d’être annulée, ou requalifiée en donation avec des droits à payer.</p>
       </div>
       <label class="pleine">Projet de résolution <span class="discret">proposé d’après votre description, modifiable</span>
         <textarea name="resolution" rows="6" maxlength="3000"></textarea></label>

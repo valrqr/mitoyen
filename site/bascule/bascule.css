@@ -108,6 +108,8 @@
 /* Demande de vote (/demande/) */
 .carte label[hidden] { display: none; }
 .aide-type { margin: 4px 0 0; font-size: 15px; }
+.alerte-prix { padding: 10px 14px; border-left: 4px solid var(--orange); background: #FFF4ED; }
+.alerte-prix[hidden] { display: none; }
 .document .question-ag { margin: 4mm 0; padding-left: 4mm; border-left: 2px solid #1E1E1E; }
 .la-poste { margin: -12px 0 28px; padding: 12px 16px; background: var(--pierre); border-radius: 8px; font-size: 16px; }
 @media print { .la-poste { display: none !important; } }

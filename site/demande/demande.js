@@ -40,7 +40,7 @@ var TYPES = {
              ["Une photo ou un descriptif du problème", "conseillé"]]
   },
   partie_commune: {
-    aide: "Installer un équipement dans une partie commune, en avoir l’usage exclusif, ou l’acheter : il faut l’accord de l’assemblée.",
+    aide: "Installer un équipement dans une partie commune ou en avoir l’usage exclusif : il faut l’accord de l’assemblée. Pour l’acheter, choisissez « Acheter une partie commune ».",
     montant: false,
     resolution: function (d) {
       return "L’assemblée générale autorise " + d.expediteur_nom + (d.expediteur_lots ? ", copropriétaire du lot " + d.expediteur_lots : "") +
@@ -48,8 +48,27 @@ var TYPES = {
         "Cette autorisation n’emporte aucun transfert de propriété ; " + d.expediteur_nom + " prend à sa charge les frais qui en résultent " +
         "et remettra les lieux en état si l’autorisation prend fin.";
     },
-    majorite: "La majorité dépend de ce qui est demandé : un usage ponctuel, un droit de jouissance exclusif ou l’achat d’une partie commune ne relèvent pas des mêmes règles (articles 24, 25 ou 26 de la loi du 10 juillet 1965). À confirmer avec le syndic.",
+    majorite: "La majorité dépend de ce qui est demandé : un usage ponctuel et un droit de jouissance exclusif ne relèvent pas des mêmes règles (articles 24, 25 ou 26 de la loi du 10 juillet 1965). À confirmer avec le syndic.",
     pieces: [["Un plan ou une photo de la partie commune concernée", "conseillé"]]
+  },
+  achat_partie_commune: {
+    aide: "Combles, fond de couloir, local inutilisé : une partie commune peut être vendue à un copropriétaire. Il faut un plan et un calcul des tantièmes par un géomètre-expert, puis un acte chez le notaire. Proposez un prix évalué et justifié : un prix symbolique sans contrepartie réelle peut entraîner l’annulation de la vente ou une requalification en donation.",
+    montant: true,
+    libelleMontant: "Prix proposé",
+    resolution: function (d) {
+      return "L’assemblée générale décide de vendre à " + d.expediteur_nom + (d.expediteur_lots ? ", copropriétaire du lot " + d.expediteur_lots : "") +
+        ", la partie commune suivante : " + (d.description || d.objet) + ", telle que délimitée au plan du géomètre-expert joint" +
+        (d.montant ? ", pour un prix de " + euros(d.montant) : ", pour un prix de [montant] justifié par l’estimation jointe") + ". " +
+        "Un nouveau lot est créé ; ses tantièmes sont ceux du projet de modificatif de l’état descriptif de division et du règlement de copropriété joint, que l’assemblée approuve. " +
+        "Les frais de géomètre-expert, de notaire, d’établissement du modificatif et de publicité foncière sont à la charge de l’acquéreur. " +
+        "Le prix est réparti entre les copropriétaires selon leurs quotes-parts de parties communes. " +
+        "L’assemblée mandate le syndic pour signer l’acte de vente et l’acte modificatif devant le notaire.";
+    },
+    majorite: "Majorité de l’article 26 de la loi du 10 juillet 1965 (majorité des copropriétaires représentant au moins les deux tiers des voix) ; second vote possible dans les conditions de l’article 26-1. Unanimité si la vente porte atteinte à la destination de l’immeuble ; règles de l’article 35 en cas de surélévation. Dans une copropriété de 5 lots principaux au plus, la décision peut aussi se prendre par consultation écrite à l’unanimité. À confirmer avec le syndic.",
+    pieces: [["Le plan du géomètre-expert délimitant la partie commune et le calcul des tantièmes du nouveau lot", "indispensable"],
+             ["Le projet de modificatif de l’état descriptif de division et du règlement de copropriété", "à joindre à la convocation (article 11 du décret)"],
+             ["Une estimation qui justifie le prix : notaire, géomètre-expert ou agent immobilier", "conseillé, surtout pour un prix bas"],
+             ["Les contreparties proposées, s’il y en a : travaux d’isolation, prise en charge d’un entretien…", "conseillé"]]
   },
   autre: {
     aide: "Toute autre question : la rédiger aussi précisément que possible, sous la forme d’une décision que l’assemblée peut adopter ou rejeter.",
@@ -141,7 +160,7 @@ function valider(f) {
   };
   if (!TYPES[d.type]) throw new Saisie("Choisissez ce que vous demandez.");
   if (!QUALITES[d.qualite]) throw new Saisie("Qualité de l’expéditeur inconnue.");
-  if (/\[votre (nom|demande)\]/.test(d.resolution)) throw new Saisie("Projet de résolution : remplacez les passages entre crochets.");
+  if (/\[(votre nom|votre demande|montant)\]/.test(d.resolution)) throw new Saisie("Projet de résolution : remplacez les passages entre crochets.");
   return d;
 }
 
@@ -199,6 +218,8 @@ document.addEventListener("DOMContentLoaded", function () {
   var zone = form.elements.resolution;
   var aide = document.getElementById("aide-type");
   var champMontant = document.getElementById("champ-montant");
+  var libelleMontant = document.getElementById("libelle-montant");
+  var alertePrix = document.getElementById("alerte-prix");
   var retouche = false;           /* le texte de la résolution a été modifié à la main : on n'y touche plus */
   document.getElementById("apercu-titre").setAttribute("tabindex", "-1");
 
@@ -206,6 +227,9 @@ document.addEventListener("DOMContentLoaded", function () {
     var f = lireFormulaire(form), t = TYPES[f.type];
     aide.textContent = t.aide;
     champMontant.hidden = !t.montant;
+    libelleMontant.textContent = t.libelleMontant || "Montant estimé TTC";
+    var prix = brouillon(f).montant;
+    alertePrix.hidden = !(f.type === "achat_partie_commune" && prix !== null && prix < 10000);
     if (!retouche) zone.value = t.resolution(brouillon(f));
   }
   zone.addEventListener("input", function () { retouche = zone.value.trim() !== ""; });
