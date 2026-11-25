@@ -112,3 +112,4 @@
 .la-poste { margin: -12px 0 28px; padding: 12px 16px; background: var(--pierre); border-radius: 8px; font-size: 16px; }
 @media print { .la-poste { display: none !important; } }
 #apercu[data-source="form-kit"] .la-poste { display: none; }
+#apercu[data-source="form-kit"] .la-poste-btn { display: none; }
