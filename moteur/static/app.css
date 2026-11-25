@@ -266,7 +266,7 @@ details.aux ul { margin: .3rem 0 0; padding-left: 1.1rem; font-size: .9rem; }
 .bref-decision { background: var(--papier); border-left: 3px solid var(--encre); padding: .8rem 1rem; margin: 1rem 0; }
 .bref-decision p { margin: .3rem 0 0; white-space: pre-line; }
 .etat-consultation { padding: .8rem 1rem; border-radius: var(--rayon); background: var(--alu); }
-.etat-adoptee { background: #E6F4EA; }
+.etat-adoptee, .etat-unanimite_acquise { background: #E6F4EA; }
 .etat-rejetee, .etat-caduque { background: #FFF4ED; border-left: 3px solid var(--orange); }
 .liens-perso code { word-break: break-all; }
 button.lien { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }

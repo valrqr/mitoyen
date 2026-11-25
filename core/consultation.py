@@ -18,6 +18,8 @@ Ce que le décret impose, et que ce module applique :
     - chaque décision est consignée sur un procès-verbal établi et signé par le syndic, avec le
       sens du vote de chacun ; les écrits des votes y sont annexés, et le tout rejoint le
       registre des procès-verbaux d'AG (art. 42-5).
+Et la loi (art. 41-12) : lorsqu'un copropriétaire a été consulté par écrit, la décision est
+formalisée AU TERME DU DÉLAI fixé par le syndic pour répondre, même si tous ont déjà voté pour.
 
 Unanimité : un seul « contre », une abstention ou une absence de réponse, et la décision
 n'est pas prise ; la question peut alors être portée à l'ordre du jour d'une AG.
@@ -41,6 +43,7 @@ SEUIL_BUDGET = Decimal("15000")
 TYPES_PRINCIPAUX_EXCLUS = {"cave", "parking", "box", "garage", "cellier", "local_velos"}
 DELAI_ORGANISATION_JOURS = 21               # décret 1967, art. 42-4
 CHOIX = {"pour": "Pour", "contre": "Contre", "abstention": "Abstention"}
+ECRIT = {"lien", "courrier", "electronique"}     # consultation écrite : formalisée au terme du délai
 MODES = {"lien": "par voie électronique (lien personnel)", "courrier": "par courrier papier",
          "electronique": "par courrier électronique", "presence": "en personne",
          "delegation": "par délégation de vote", "visio": "par visioconférence ou audioconférence"}
@@ -208,26 +211,37 @@ def resultat(c: dict, maintenant: datetime | None = None) -> dict:
     pour = sum(1 for e in ev if e["choix"] == "pour")
     refus = [x for x, e in c["electeurs"].items() if e["choix"] in ("contre", "abstention")]
     attente = [x for x, e in c["electeurs"].items() if not e["choix"]]
+    ecrit = any(e["mode"] in ECRIT for e in ev)
+    termine = not ouverte(c, maintenant)
     if refus:
         statut, texte = "rejetee", "Décision non prise : l'unanimité n'est plus possible."
-    elif not attente:
+    elif not attente and (termine or not ecrit):
         statut, texte = "adoptee", "Décision prise à l'unanimité des copropriétaires."
+    elif not attente:
+        statut = "unanimite_acquise"
+        texte = (f"Tous les copropriétaires ont voté pour. La décision sera formalisée le "
+                 f"{date.fromisoformat(c['repondre_avant']).strftime('%d/%m/%Y')}, au terme du délai de réponse "
+                 "(loi du 10 juillet 1965, art. 41-12).")
     elif ouverte(c, maintenant):
         statut, texte = "en_cours", f"En attente de {len(attente)} réponse{'s' if len(attente) > 1 else ''}."
     else:
         statut, texte = "caduque", "Décision non prise : tous les copropriétaires n'ont pas répondu dans le délai."
     return {"statut": statut, "texte": texte, "pour": pour, "refus": refus, "attente": attente, "nb": nb,
-            "suite": None if statut in ("adoptee", "en_cours") else
+            "suite": None if statut in ("adoptee", "en_cours", "unanimite_acquise") else
             "La question peut être inscrite à l'ordre du jour de la prochaine assemblée générale, où elle sera "
             "votée à la majorité habituelle."}
 
 
 def clore(racine: Path, copro: str, cid: str, maintenant: datetime | None = None) -> dict:
-    """Clôture : dès que le résultat est acquis (unanimité ou refus), ou à l'échéance."""
+    """Clôture : à l'échéance, ou plus tôt si l'unanimité est devenue impossible, ou si tous ont voté
+    en réunion (sans consultation écrite)."""
     c = charger(racine, copro, cid)
     r = resultat(c, maintenant)
     if r["statut"] == "en_cours":
         raise ConsultationInvalide("Des copropriétaires n'ont pas encore répondu et le délai court encore")
+    if r["statut"] == "unanimite_acquise":
+        raise ConsultationInvalide("La décision ne peut être formalisée qu'au terme du délai de réponse "
+                                   "(loi du 10 juillet 1965, art. 41-12)")
     c["close_le"] = (maintenant or datetime.now()).replace(microsecond=0).isoformat()
     c["resultat"] = r["statut"]
     sauver(racine, copro, c)

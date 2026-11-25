@@ -47,7 +47,7 @@
 {% endif %}
 
 <div class="actions-vente">
-  {% if not c.close_le and res.statut != "en_cours" %}
+  {% if not c.close_le and res.statut not in ("en_cours", "unanimite_acquise") %}
   <form method="post" action="/app/{{ copro }}/consultations/{{ c.id }}/cloture"><button type="submit">Clore la consultation</button></form>
   {% endif %}
   <a class="bouton secondaire" href="/app/{{ copro }}/consultations/{{ c.id }}/proces-verbal.pdf" target="_blank">Procès-verbal (PDF)</a>

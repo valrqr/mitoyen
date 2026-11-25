@@ -1679,8 +1679,8 @@ def test_interface_consultation_petite_copropriete():
     # Le vote papier de Mme Mercier, saisi par le syndic
     t = n.post("/app/tilleuls/consultations/C001/vote", data={"electeur": "TL03", "choix": "pour",
                                                              "mode": "courrier", "piece": "Bulletin signé reçu"}).text
-    assert "Décision prise à l&#39;unanimité" in t or "Décision prise à l'unanimité" in t
+    assert "Tous les copropriétaires ont voté pour" in t and "20/03/2027" in t      # formalisée au terme du délai
     assert n.get("/app/tilleuls/consultations/C001/bulletin/TL03.pdf").content[:4] == b"%PDF"
-    assert "Consultation close" in n.post("/app/tilleuls/consultations/C001/cloture").text
+    assert "terme du délai" in n.post("/app/tilleuls/consultations/C001/cloture").text
     assert n.get("/app/tilleuls/consultations/C001/proces-verbal.pdf").content[:4] == b"%PDF"
     assert public.get("/consulter/tilleuls/C001/" + "x" * 24).status_code == 404

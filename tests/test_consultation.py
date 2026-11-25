@@ -56,7 +56,27 @@ def test_unanimite_et_tous_doivent_repondre(tmp_path):
     with pytest.raises(C.ConsultationInvalide, match="déjà voté"):
         C.voter(c, "TL01", "contre", "lien", maintenant=T0)
     C.voter(c, "TL03", "pour", "courrier", piece="bulletin signé reçu le 05/03", maintenant=T0)
+    # Consultation écrite : la décision n'est formalisée qu'au terme du délai (loi, art. 41-12)
+    r = C.resultat(c, T0)
+    assert r["statut"] == "unanimite_acquise" and "15/03/2027" in r["texte"]
+    assert C.resultat(c, datetime(2027, 3, 16))["statut"] == "adoptee"
+
+
+def test_reunion_sans_ecrit_formalisee_tout_de_suite(tmp_path):
+    c, _ = _ouvrir(tmp_path)
+    for e in ("TL01", "TL02", "TL03"):
+        C.voter(c, e, "pour", "presence", maintenant=T0)
     assert C.resultat(c, T0)["statut"] == "adoptee"
+
+
+def test_cloture_avant_terme_refusee_si_unanimite_ecrite(tmp_path):
+    c, _ = _ouvrir(tmp_path)
+    for e in ("TL01", "TL02", "TL03"):
+        C.voter(c, e, "pour", "lien", maintenant=T0)
+    C.sauver(tmp_path, "t", c)
+    with pytest.raises(C.ConsultationInvalide, match="terme du délai"):
+        C.clore(tmp_path, "t", c["id"], T0)
+    assert C.clore(tmp_path, "t", c["id"], datetime(2027, 3, 16))["resultat"] == "adoptee"
 
 
 def test_une_abstention_suffit_a_empecher(tmp_path):
