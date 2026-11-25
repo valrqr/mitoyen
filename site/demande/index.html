@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demander un vote à la prochaine AG : le courrier au syndic — Mitoyen</title>
+<meta name="description" content="Gratuit et sans compte : le courrier qui demande au syndic d’inscrire votre question à l’ordre du jour de la prochaine assemblée générale (article 10 du décret de 1967), avec le projet de résolution et la liste des pièces à joindre.">
+<link rel="canonical" href="https://mitoyen.app/demande/">
+<meta property="og:title" content="Demander un vote à la prochaine AG">
+<meta property="og:description" content="Le courrier au syndic et le projet de résolution, gratuits et sans compte.">
+<meta property="og:url" content="https://mitoyen.app/demande/">
+<meta property="og:image" content="https://mitoyen.app/partage.png">
+<meta property="og:locale" content="fr_FR">
+<link rel="icon" href="/icone.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/bascule/bascule.css">
+</head>
+<body>
+<header class="nav">
+  <div class="cadre">
+    <a class="logo" href="/" aria-label="Mitoyen, accueil"><img src="/icone.svg" alt="" width="36" height="34">Mitoyen</a>
+    <nav class="liens" aria-label="Navigation principale">
+      <a href="/seance/">Outil de séance</a>
+      <a class="btn plein" href="/#liste">Liste d’intérêt</a>
+    </nav>
+  </div>
+</header>
+
+<main class="cadre article bascule">
+  <p class="petit"><a href="/">Accueil</a> · Outil gratuit</p>
+  <h1>Demander un vote à la prochaine assemblée générale</h1>
+  <p class="chapeau">Des travaux chez vous, une partie commune à utiliser, une réparation à faire voter : décrivez votre demande, Mitoyen prépare le courrier au syndic et le projet de résolution. Il ne vous reste qu’à l’envoyer.</p>
+  <p class="confidentiel"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M6 11h12v9H6zM8 11V8a4 4 0 0 1 8 0v3"/></svg>Rien n’est envoyé ni enregistré : votre courrier est préparé dans votre navigateur.</p>
+
+  <section class="calendrier" aria-labelledby="quand">
+    <h2 id="quand">Envoyez tôt</h2>
+    <p>Tout copropriétaire peut, à tout moment, demander au syndic d’inscrire une question à l’ordre du jour (article 10 du décret du 17 mars 1967). Une demande reçue trop tard pour la prochaine assemblée passe à la suivante. <strong>Pour une AG de printemps, écrivez dès janvier.</strong></p>
+  </section>
+
+  <form class="carte" id="form-demande" novalidate>
+    <fieldset><legend>Votre demande</legend>
+      <label>Ce que vous demandez <select name="type">
+        <option value="travaux_prives">Des travaux chez moi qui touchent les parties communes ou l’aspect extérieur</option>
+        <option value="travaux_communs">Des travaux sur les parties communes</option>
+        <option value="partie_commune">Utiliser une partie commune</option>
+        <option value="autre">Autre question</option></select></label>
+      <p class="aide-type discret" id="aide-type"></p>
+      <div class="deux">
+        <label class="pleine">En quelques mots <input type="text" name="objet" required maxlength="120" placeholder="Pose d’un climatiseur sur le balcon"></label>
+        <label class="pleine">Description <span class="discret">ce qui sera fait, où, comment</span> <textarea name="description" rows="3" maxlength="1200"></textarea></label>
+        <label id="champ-montant">Montant estimé TTC <span class="discret">facultatif</span> <input type="text" inputmode="decimal" name="montant"></label>
+      </div>
+      <label class="pleine">Projet de résolution <span class="discret">proposé d’après votre description, modifiable</span>
+        <textarea name="resolution" rows="6" maxlength="3000"></textarea></label>
+    </fieldset>
+    <fieldset><legend>Vous</legend>
+      <div class="deux">
+        <label>Nom <input type="text" name="expediteur_nom" required maxlength="120" autocomplete="name"></label>
+        <label>Numéros de lots <span class="discret">facultatif</span> <input type="text" name="expediteur_lots" maxlength="60"></label>
+        <label>En qualité de <select name="qualite">
+          <option value="coproprietaire">Copropriétaire</option>
+          <option value="conseil">Membre du conseil syndical</option>
+          <option value="president">Président du conseil syndical</option></select></label>
+        <label>Ville <span class="discret">pour « Fait à »</span> <input type="text" name="lieu" maxlength="80" autocomplete="address-level2"></label>
+        <label class="pleine">Adresse <textarea name="expediteur_adresse" rows="2" required maxlength="300" autocomplete="street-address"></textarea></label>
+      </div>
+    </fieldset>
+    <fieldset><legend>Le syndic et la copropriété</legend>
+      <div class="deux">
+        <label>Nom du syndic <input type="text" name="syndic_nom" required maxlength="120"></label>
+        <label>Adresse du syndic <textarea name="syndic_adresse" rows="2" required maxlength="300"></textarea></label>
+        <label>Nom de la résidence <input type="text" name="residence_nom" required maxlength="120"></label>
+        <label>Adresse de la résidence <input type="text" name="residence_adresse" required maxlength="300"></label>
+      </div>
+    </fieldset>
+    <label class="coche"><input type="checkbox" name="grand"> Version en grands caractères, pour les malvoyants</label>
+    <p class="erreur" role="alert" hidden></p>
+    <div><button class="btn plein" type="submit">Préparer le courrier</button></div>
+  </form>
+  <div class="note"><strong>Avant d’envoyer :</strong> signez la lettre, joignez les pièces indiquées et envoyez le tout en recommandé avec avis de réception, ou en recommandé électronique : c’est ce que prévoient les textes. Une remise en main propre contre signature peut suffire entre voisins, mais en cas de désaccord, seul le recommandé prouve la date de votre demande.</div>
+
+  <section id="apercu" class="apercu" hidden aria-labelledby="apercu-titre">
+    <h2 id="apercu-titre">Votre courrier</h2>
+    <p>Vérifiez-le, puis imprimez-le ou enregistrez-le en PDF (choisissez « Enregistrer au format PDF » comme imprimante).</p>
+    <div class="boutons-apercu">
+      <button class="btn plein" type="button" id="imprimer">Imprimer ou enregistrer en PDF</button>
+      <button class="btn vide" type="button" id="modifier">Modifier</button>
+    </div>
+    <div id="document" class="document"></div>
+  </section>
+
+  <h2>Et ensuite ?</h2>
+  <ol class="etapes">
+    <li>Le syndic inscrit votre question à l’ordre du jour et joint votre projet de résolution à la convocation, envoyée au moins 21 jours avant l’assemblée.</li>
+    <li>Le jour de l’assemblée, vous présentez votre demande ; les copropriétaires votent, présents, représentés ou par correspondance.</li>
+    <li>Une fois la résolution adoptée, vous pouvez commencer, dans les conditions votées. Attendez la fin du délai de contestation (deux mois après la notification du procès-verbal) avant de lancer des travaux importants.</li>
+  </ol>
+  <p class="petit">Document d’information, pas un conseil juridique : la majorité indiquée l’est à titre indicatif, d’après la loi du 10 juillet 1965 ; le règlement de copropriété peut prévoir des règles propres à l’immeuble. Pour un cas particulier, l’ADIL de votre département répond gratuitement.</p>
+</main>
+
+<footer>
+  <div class="cadre">
+    <p class="pied-marque"><img src="/icone.svg" alt="" width="44" height="42"></p>
+    <p class="fort">Mitoyen, l’outil libre des syndics bénévoles. Partagez les murs, plus les frais de syndic.</p>
+    <p class="petit"><a href="/mentions-legales/">Mentions légales et confidentialité</a></p>
+    <p class="petit">© 2026 Mitoyen. Logiciel libre sous licence AGPL-3.0.</p>
+  </div>
+</footer>
+<script src="/demande/demande.js"></script>
+</body>
+</html>

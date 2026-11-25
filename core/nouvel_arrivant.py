@@ -189,7 +189,8 @@ def pack_proprietaire(fiche: dict, numeros: list[int], nom: str, chemin: Path, r
                   "demande en lettre recommandée, papier ou électronique, avec le texte de la résolution que vous "
                   "proposez et, pour des travaux, un document qui en précise l'implantation et la consistance (plan, "
                   "devis). Une demande arrivée trop tard pour la prochaine assemblée est inscrite à la suivante. "
-                  "Le syndic peut vous aider à rédiger la résolution.", S["txt"])]), Spacer(1, 6 * mm)]
+                  "Le syndic peut vous aider à rédiger la résolution ; un modèle de courrier gratuit est aussi "
+                  "proposé sur mitoyen.app/demande.", S["txt"])]), Spacer(1, 6 * mm)]
     h += [Paragraph("Joints à ce guide : la fiche synthétique de la copropriété et, en dernière page, le bulletin de vos choix "
                     "à rendre au syndic. Le règlement de copropriété vous a été remis lors de la vente ; il s'applique "
                     "à vous comme à vos éventuels locataires.", S["txt"]), Spacer(1, 3 * mm),
