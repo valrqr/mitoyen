@@ -1162,6 +1162,7 @@ def test_bienvenue_proprietaire():
     assert "1 308,00" in texte and "01/04/2027" in texte          # charges annuelles, prochaine échéance
     assert "Fiche synthétique" in texte and "Bulletin de choix" in texte
     assert "2025-1292" in texte and "prélèvement automatique" in texte
+    assert "vote de l'assemblée générale" in texte and "art. 10" in texte      # ce qui passe par l'AG, et comment
     assert "Durand Camille" in texte                               # le syndic
     assert "Bernard" not in texte                                  # jamais le nom de l'ancien propriétaire
     assert "Page 1 sur 1" in texte                                 # chaque document a sa propre numérotation

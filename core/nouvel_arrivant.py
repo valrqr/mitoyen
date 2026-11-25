@@ -165,6 +165,31 @@ def pack_proprietaire(fiche: dict, numeros: list[int], nom: str, chemin: Path, r
     if vie:
         h += [KeepTogether([Paragraph("4. La vie de l'immeuble", S["sous"]), Spacer(1, 2 * mm), *vie]),
               Spacer(1, 4 * mm)]
+    # 5. Ce qui passe par un vote de l'assemblée générale, et comment le demander
+    n_vote = 5 if vie else 4
+    cas = ["<b>Des travaux chez vous qui touchent les parties communes ou l'aspect extérieur de l'immeuble</b> : "
+           "percer un mur porteur, poser un climatiseur en façade, fermer un balcon ou une loggia, changer "
+           "fenêtres ou volets pour un autre modèle ou une autre couleur.",
+           "<b>Utiliser ou modifier une partie commune</b>, même un bout de couloir ou de jardin, même à vos frais.",
+           "<b>Diviser ou réunir des lots</b> : la nouvelle répartition des charges est votée par l'assemblée.",
+           "<b>Changer l'usage de votre lot</b> (un logement en local professionnel, par exemple) quand le règlement "
+           "de copropriété l'encadre."]
+    h += [KeepTogether([
+        Paragraph(f"{n_vote}. Ce qui passe par un vote de l'assemblée générale", S["sous"]), Spacer(1, 2 * mm),
+        Paragraph("Chez vous, vous êtes libre, sauf quand une décision touche à ce qui appartient à tous. Il faut "
+                  "alors l'accord de l'assemblée générale <b>avant</b> de commencer. Les cas les plus courants :",
+                  S["txt"]), Spacer(1, 1.5 * mm),
+        *[Paragraph(f"• {x}", S["txt"]) for x in cas], Spacer(1, 1.5 * mm),
+        Paragraph("Des travaux faits sans autorisation peuvent devoir être défaits à vos frais. En cas de doute, "
+                  "demandez au syndic avant de commencer"
+                  + (" ; le règlement en clair, joint, donne les règles propres à l'immeuble." if regl else "."),
+                  S["txt"]), Spacer(1, 3 * mm),
+        Paragraph("<b>Demander un vote.</b> À tout moment, vous pouvez demander au syndic d'inscrire une question à "
+                  "l'ordre du jour de la prochaine assemblée (décret du 17 mars 1967, art. 10). Envoyez-lui votre "
+                  "demande en lettre recommandée, papier ou électronique, avec le texte de la résolution que vous "
+                  "proposez et, pour des travaux, un document qui en précise l'implantation et la consistance (plan, "
+                  "devis). Une demande arrivée trop tard pour la prochaine assemblée est inscrite à la suivante. "
+                  "Le syndic peut vous aider à rédiger la résolution.", S["txt"])]), Spacer(1, 6 * mm)]
     h += [Paragraph("Joints à ce guide : la fiche synthétique de la copropriété et, en dernière page, le bulletin de vos choix "
                     "à rendre au syndic. Le règlement de copropriété vous a été remis lors de la vente ; il s'applique "
                     "à vous comme à vos éventuels locataires.", S["txt"]), Spacer(1, 3 * mm),
