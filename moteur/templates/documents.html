@@ -58,9 +58,10 @@
       {% for l in g.lots %}<label><input type="checkbox" name="lots" value="{{ l.numero }}"> Lot {{ l.numero }}, {{ l.desc or l.type }}</label>{% endfor %}
     {% endfor %}
   </fieldset>
-  <p class="discret" style="margin:0">Fiche synthétique, pré-état daté, plan de travaux et bordereau des documents exigés, réunis pour le notaire. Les charges payées par le vendeur restent à compléter d'après vos comptes.</p>
+  <p class="discret" style="margin:0">Fiche synthétique, pré-état daté, plan de travaux et bordereau des documents exigés, réunis pour le notaire. Les comptes du vendeur viennent de la comptabilité quand elle couvre les exercices demandés.</p>
   <div><button type="submit">Préparer le dossier de vente</button></div>
 </form>
+<p>Avant l'acte : <a class="bouton secondaire" href="/app/{{ copro }}/ventes">État daté, certificat et suivi de la vente</a></p>
 
 <h2 id="transmission">Changer de syndic</h2>
 <p>Si la copropriété choisit un autre syndic, elle part avec toutes ses données : comptes, archives et documents, dans

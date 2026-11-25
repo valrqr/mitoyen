@@ -115,6 +115,7 @@ import banque  # noqa: E402
 import impayes  # noqa: E402
 import compta  # noqa: E402
 import annexes  # noqa: E402
+import etat_date  # noqa: E402
 import rappel_ag  # noqa: E402
 import reglement  # noqa: E402
 import meubles_tourisme  # noqa: E402
@@ -1266,15 +1267,34 @@ class DemandeVente(BaseModel):
     au: date | None = None
 
 
+def comptes_vendeur_complets(fiche: dict, copro: str, lots: list[int], jour: date, fournis: dict | None = None) -> dict:
+    """Les comptes du vendeur tirés de la comptabilité tenue dans Mitoyen ; ce que le syndic
+    fournit lui-même l'emporte (exercice par exercice pour les charges payées)."""
+    try:
+        E, st, bud = etat_date.journal_et_budgets(fiche, DOSSIER_SORTIE, DOSSIER_DATA, copro)
+        auto = etat_date.comptes_vendeur(fiche, E, st, bud, lots, jour)
+    except etat_date.EtatDateInvalide as e:
+        raise vente.VenteInvalide(str(e)) from e
+    fournis = fournis or {}
+    par_ex = {int(c["exercice"]): c for c in auto.get("charges_payees", [])}
+    par_ex.update({int(c["exercice"]): c for c in fournis.get("charges_payees") or []})
+    res = {**auto, "charges_payees": [par_ex[k] for k in sorted(par_ex)][-2:]}
+    if fournis.get("impayes_vendeur") is not None:
+        res["impayes_vendeur"] = fournis["impayes_vendeur"]
+    return res
+
+
 @app.post("/copros/{copro}/ventes", dependencies=[Depends(verifier_cle)])
 def creer_dossier_vente(corps: DemandeVente, copro: str = Copro) -> dict:
     """Les comptes du vendeur (charges payées, impayés) viennent de la comptabilité
     du syndic ; sans eux, le dossier est produit et les rubriques sont marquées
     « à compléter »."""
-    comptes = {"charges_payees": [c.model_dump() for c in corps.charges_payees],
+    fiche = fiche_de(copro)
+    fournis = {"charges_payees": [c.model_dump() for c in corps.charges_payees],
                "impayes_vendeur": corps.impayes_vendeur}
     try:
-        r = vente.generer_dossier(fiche_de(copro), corps.lots, DOSSIER_SORTIE / copro / "ventes", DOSSIER_DATA,
+        comptes = comptes_vendeur_complets(fiche, copro, corps.lots, corps.au or date.today(), fournis)
+        r = vente.generer_dossier(fiche, corps.lots, DOSSIER_SORTIE / copro / "ventes", DOSSIER_DATA,
                                   copro, comptes, corps.acquereur_coproprietaire, corps.au)
     except vente.VenteInvalide as e:
         raise HTTPException(422, str(e))

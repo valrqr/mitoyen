@@ -1592,3 +1592,36 @@ def test_interface_annexes_comptables():
                                                                      "retour_exercice": "2027"}).text
     assert "clôturé le 31/12/2027" in t
     assert n.get("/app/mimosas/comptes/annexes", params={"exercice": 1}).status_code == 404
+
+
+def test_interface_vente_etat_date_et_suivi():
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    n.get("/app/mimosas", params={"au": "2027-03-15"})
+    n.post("/app/mimosas/comptes/ouverture", data={"date": "2027-01-01", "banque": "9 000", "fonds_travaux": "9 000",
+                                                  "solde_CP08": "120"})
+    t = n.get("/app/mimosas/ventes").text
+    assert "L'état daté" in t and "jusqu'à 380 €" in t and "Aucune vente enregistrée" in t
+    # Vendeur endetté : état daté et décompte
+    t = n.post("/app/mimosas/ventes/etat-date", data={"lots": ["9"], "date": "2027-03-15"}).text
+    assert "État daté prêt" in t and "décompte joint" in t and "120,00" in t
+    import re
+    lien = re.search(r'href="(/app/mimosas/ventes/etat-date/[^"]+\.zip)"', t).group(1)
+    r = n.get(lien)
+    assert r.status_code == 200 and r.content[:2] == b"PK"
+    import io
+    import zipfile
+    assert set(zipfile.ZipFile(io.BytesIO(r.content)).namelist()) == {"etat_date.pdf", "decompte_sommes_dues.pdf"}
+    assert n.get("/app/mimosas/ventes/etat-date/..%2Fx.zip").status_code == 404
+    assert "un dossier par vendeur" in n.post("/app/mimosas/ventes/etat-date", data={"lots": ["1", "9"]}).text
+    # Après l'acte : avis de mutation, délai d'opposition, nouveau copropriétaire
+    t = n.post("/app/mimosas/ventes/mutations", data={"lots": ["9"], "date_acte": "2027-03-20",
+                                                     "acquereur": "M. Exemple"}).text
+    assert "Vente des lots 9 enregistrée" in t
+    t = n.post("/app/mimosas/ventes/mutations/M001/avis", data={"recu_le": "2027-03-10"}).text
+    assert "25/03/2027" in t and "10 jours" in t
+    t = n.post("/app/mimosas/ventes/mutations/M001/fiche").text
+    assert "nouveau copropriétaire est inscrit" in t
+    # Le dossier pour la promesse prend désormais les impayés du vendeur dans la compta
+    r = n.post("/app/mimosas/documents/vente", data={"lots": ["9"]})
+    assert "Dossier de vente prêt" in r.text

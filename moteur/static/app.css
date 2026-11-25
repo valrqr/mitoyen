@@ -237,3 +237,9 @@ details.aux ul { margin: .3rem 0 0; padding-left: 1.1rem; font-size: .9rem; }
 .annexe-table tr.a-sous_total td { font-weight: 600; border-top: 1px solid var(--encre); }
 .annexe-table tr.a-total td { font-weight: 700; background: var(--papier); border-top: 2px solid var(--encre); }
 .formulaire textarea { width: 100%; font-family: ui-monospace, monospace; font-size: .9rem; }
+
+/* Vente d'un lot */
+.vente-suivi { border-top: 1px solid var(--filet); padding-top: 1rem; margin-top: 1.4rem; }
+.vente-suivi h3 { margin: 0; }
+.actions-vente { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
+.actions-vente .decision label { display: inline-flex; flex-direction: column; gap: .2rem; }

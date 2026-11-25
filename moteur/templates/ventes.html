@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block titre %}Vente d'un lot{% endblock %}
+{% block contenu %}
+<p><a href="/app/{{ copro }}/documents#vente">← Retour aux documents</a></p>
+<h1>Vente d'un lot</h1>
+<p class="chapeau">Avant la promesse, le <a href="/app/{{ copro }}/documents#vente">dossier de vente</a>. Avant l'acte, l'état daté que le notaire vous demande. Après l'acte, l'avis de mutation et le nouveau copropriétaire. Ici, sans honoraires : chez un syndic professionnel, l'état daté peut coûter jusqu'à 380 €.</p>
+
+<h2 id="etat-date">L'état daté</h2>
+{% if telechargement %}<div class="message">Les documents sont prêts : <a class="bouton" href="{{ telechargement }}">Télécharger (ZIP)</a></div>{% endif %}
+{% if not compta_ouverte %}
+<div class="vide">L'état daté se calcule à partir des comptes. Saisissez d'abord les <a href="/app/{{ copro }}/comptes#ouverture">soldes d'ouverture</a> dans la comptabilité.</div>
+{% else %}
+<form class="formulaire" method="post" action="/app/{{ copro }}/ventes/etat-date">
+  <fieldset class="choix-lots">
+    <legend>Les lots vendus (un seul vendeur)</legend>
+    {% for g in groupes %}<div class="proprio">{{ g.nom }}</div>
+      {% for l in g.lots %}<label><input type="checkbox" name="lots" value="{{ l.numero }}"> Lot {{ l.numero }}, {{ l.desc or l.type }}</label>{% endfor %}
+    {% endfor %}
+  </fieldset>
+  <div class="champs">
+    <label>Arrêté au <input type="date" name="date" value="{{ jour.isoformat() }}"></label>
+    <label>Acquéreur (facultatif) <input name="acquereur" maxlength="120" placeholder="Nom de l'acquéreur"></label>
+  </div>
+  <label>Procédures en cours impliquant le syndicat (facultatif)
+    <textarea name="procedures" rows="3" maxlength="2000" placeholder="Aucune procédure en cours connue du syndic."></textarea></label>
+  <div><button type="submit">Établir l'état daté</button>
+    <span class="discret">Avec le certificat de l'article 20 si le vendeur est à jour, sinon le décompte de ce qu'il doit.</span></div>
+</form>
+{% endif %}
+
+<h2 id="suivi">Après la vente</h2>
+<form class="formulaire" method="post" action="/app/{{ copro }}/ventes/mutations">
+  <fieldset class="choix-lots">
+    <legend>Enregistrer une vente signée</legend>
+    {% for g in groupes %}<div class="proprio">{{ g.nom }}</div>
+      {% for l in g.lots %}<label><input type="checkbox" name="lots" value="{{ l.numero }}"> Lot {{ l.numero }}, {{ l.desc or l.type }}</label>{% endfor %}
+    {% endfor %}
+  </fieldset>
+  <div class="champs">
+    <label>Date de l'acte <input type="date" name="date_acte" required></label>
+    <label>Acquéreur <input name="acquereur" maxlength="120"></label>
+    <label>Notaire <input name="notaire" maxlength="120"></label>
+  </div>
+  <div><button type="submit">Enregistrer la vente</button></div>
+</form>
+
+{% for v in ventes %}
+<section class="vente-suivi">
+  <h3>Lot{{ "s" if v.lots|length > 1 }} {{ v.lots|join(", ") }} · {{ v.vendeur_nom }}{% if v.acquereur %} → {{ v.acquereur }}{% endif %}</h3>
+  <p class="discret">Acte du {{ v.date_acte|date_fr }}{% if v.notaire %}, notaire : {{ v.notaire }}{% endif %}</p>
+  <ul class="controles">
+    {% for e in v.etapes %}
+    <li class="{{ 'ok' if e.fait else 'ko' }}">
+      <span class="marque-controle" aria-hidden="true">{{ "✓" if e.fait else "!" }}</span>
+      <span><strong>{{ e.texte }}</strong><br><span class="discret">{{ e.detail }}</span></span>
+      <span class="visuellement-cache">{{ "fait" if e.fait else "à faire" }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% if v.du_vendeur != 0 and v.jours_restants is not none and v.jours_restants >= 0 %}<p><strong>{{ v.jours_restants }} jour{{ "s" if v.jours_restants > 1 }}</strong> pour former opposition{% if not v.du_vendeur %}, si le vendeur doit encore des sommes{% endif %}.</p>{% endif %}
+  <div class="actions-vente">
+    {% if not v.avis_recu_le %}
+    <form class="decision" method="post" action="/app/{{ copro }}/ventes/mutations/{{ v.id }}/avis">
+      <label>Avis de mutation reçu le <input type="date" name="recu_le" required></label>
+      <button type="submit">Enregistrer</button>
+    </form>
+    {% endif %}
+    {% if not v.fiche_mise_a_jour %}
+    <form method="post" action="/app/{{ copro }}/ventes/mutations/{{ v.id }}/fiche">
+      <button type="submit" class="secondaire">Le nouveau copropriétaire est inscrit</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% else %}
+<div class="vide">Aucune vente enregistrée.</div>
+{% endfor %}
+
+<p class="discret">Aide à la préparation, d'après la loi du 10 juillet 1965 (art. 20) et le décret du 17 mars 1967 (art. 5, 5-1 et 6-2), à comparer avec les textes sur Légifrance. Le notaire vérifie le dossier ; ce n'est pas un conseil juridique. L'ADIL renseigne gratuitement.</p>
+{% endblock %}

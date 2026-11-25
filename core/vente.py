@@ -261,6 +261,8 @@ def pre_etat_date(fiche: dict, numeros: list[int], racine: Path | None = None, c
         a_completer.append("Charges courantes et hors budget payées par le vendeur sur les deux derniers exercices")
     if cv.get("impayes_vendeur") is None:
         a_completer.append("Sommes restant dues par le vendeur au syndicat (impayés)")
+    if cv.get("etat_global"):
+        comptes = cv["etat_global"]          # tiré de la comptabilité tenue dans Mitoyen
     if not comptes:
         a_completer.append("État global des impayés et des dettes fournisseurs (comptes du dernier exercice approuvé)")
     return {

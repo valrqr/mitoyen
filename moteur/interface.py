@@ -690,8 +690,10 @@ def documents_page(request: Request, copro: str):
 def documents_vente(request: Request, copro: str, lots: list[int] = Form(...)):
     exiger(request, copro)
     try:
-        r = A.vente.generer_dossier(A.fiche_de(copro), lots, A.DOSSIER_SORTIE / copro / "ventes", A.DOSSIER_DATA,
-                                    copro, None, False, aujourdhui(request))
+        fiche = A.fiche_de(copro)
+        comptes = A.comptes_vendeur_complets(fiche, copro, lots, aujourdhui(request))
+        r = A.vente.generer_dossier(fiche, lots, A.DOSSIER_SORTIE / copro / "ventes", A.DOSSIER_DATA,
+                                    copro, comptes, False, aujourdhui(request))
     except A.vente.VenteInvalide as e:
         return retour(f"/app/{copro}/documents", f"Dossier non créé : {e}", request)
     request.session["telechargement"] = f"/copros/{copro}/ventes/{r['id']}.zip"
@@ -1104,3 +1106,116 @@ def comptes_operation_cloture(request: Request, copro: str, op_id: str, jour: da
     except A.compta.ComptaInvalide as e:
         return retour(cible, str(e), request)
     return retour(cible, f"{o['libelle']} : clôturé le {jour:%d/%m/%Y}.", request)
+
+
+# --------------------------------------------------------------------------- #
+# Vente d'un lot : état daté, certificat de l'article 20, suivi de la mutation
+# --------------------------------------------------------------------------- #
+ID_ETAT_DATE = re.compile(r"^\d{8}-lots(-\d{1,4}){1,20}$")
+
+
+def _groupes_lots(fiche: dict) -> list[dict]:
+    par_proprio = {}
+    for l in fiche["lots"]:
+        par_proprio.setdefault(l["proprietaire"], []).append(l)
+    noms = {c["id"]: c["nom"] for c in fiche["coproprietaires"]}
+    return [{"id": cid, "nom": noms[cid], "lots": sorted(ls, key=lambda l: l["numero"])}
+            for cid, ls in sorted(par_proprio.items(), key=lambda x: noms[x[0]])]
+
+
+@routeur.get("/{copro}/ventes", response_class=HTMLResponse)
+def ventes_page(request: Request, copro: str):
+    exiger(request, copro)
+    fiche = A.fiche_de(copro)
+    jour = aujourdhui(request)
+    noms = {c["id"]: c["nom"] for c in fiche["coproprietaires"]}
+    ED = A.etat_date
+    mutations = list(reversed(ED.charger_mutations(A.DOSSIER_DATA, copro)))
+    E = st = bud = None
+    if mutations:
+        E, st, bud = ED.journal_et_budgets(fiche, A.DOSSIER_SORTIE, A.DOSSIER_DATA, copro)
+    ventes = []
+    for m in mutations:
+        try:
+            du = ED.etat_date(fiche, E, st, bud, m["lots"], date.fromisoformat(m["date_acte"]))["total_1"]
+        except ED.EtatDateInvalide:
+            du = None                          # comptes non tenus à cette date
+        ventes.append(ED.suivi(m, jour, du))
+    for v in ventes:
+        v["vendeur_nom"] = noms.get(v["vendeur"], v["vendeur"])
+    return page(request, "ventes.html", copro, onglet="documents", groupes=_groupes_lots(fiche), ventes=ventes,
+                compta_ouverte=A.compta.charger(A.DOSSIER_DATA, copro)["ouverture"] is not None,
+                telechargement=request.session.pop("telechargement", None))
+
+
+@routeur.post("/{copro}/ventes/etat-date")
+def ventes_etat_date(request: Request, copro: str, lots: list[int] = Form(...),
+                     jour: date | None = Form(None, alias="date"), acquereur: str = Form(""),
+                     procedures: str = Form("")):
+    exiger(request, copro)
+    fiche = A.fiche_de(copro)
+    jour = jour or aujourdhui(request)
+    E = A.etat_date
+    try:
+        ed = E.calculer(fiche, A.DOSSIER_SORTIE, A.DOSSIER_DATA, copro, lots, jour, procedures, acquereur)
+    except E.EtatDateInvalide as e:
+        return retour(f"/app/{copro}/ventes#etat-date", f"État daté non établi : {e}", request)
+    vid = f"{jour:%Y%m%d}-lots-{'-'.join(str(l['numero']) for l in ed['lots'])}"
+    dossier = A.DOSSIER_SORTIE / copro / "etats-dates" / vid
+    dossier.mkdir(parents=True, exist_ok=True)
+    f1 = E.generer_etat_date(fiche, ed, dossier / "etat_date.pdf")
+    nom2 = "certificat_article_20.pdf" if ed["libre"] else "decompte_sommes_dues.pdf"
+    f2 = E.generer_certificat(fiche, ed, dossier / nom2)
+    import zipfile
+    with zipfile.ZipFile(dossier / f"etat_date_{vid}.zip", "w", zipfile.ZIP_DEFLATED) as z:
+        z.write(f1, f1.name)
+        z.write(f2, f2.name)
+    request.session["telechargement"] = f"/app/{copro}/ventes/etat-date/{vid}.zip"
+    suite = ("le vendeur est à jour : certificat de l'article 20 joint." if ed["libre"] else
+             f"le vendeur doit {euros(ed['total_1'])} : décompte joint, à transmettre au notaire.")
+    return retour(f"/app/{copro}/ventes#etat-date", f"État daté prêt ; {suite}", request)
+
+
+@routeur.get("/{copro}/ventes/etat-date/{vid}.zip")
+def ventes_etat_date_zip(request: Request, copro: str, vid: str):
+    exiger(request, copro)
+    if not ID_ETAT_DATE.match(vid):
+        raise HTTPException(404)
+    chemin = A.DOSSIER_SORTIE / copro / "etats-dates" / vid / f"etat_date_{vid}.zip"
+    if not chemin.is_file():
+        raise HTTPException(404, "État daté introuvable")
+    return FileResponse(chemin, media_type="application/zip", filename=chemin.name)
+
+
+@routeur.post("/{copro}/ventes/mutations")
+def ventes_enregistrer(request: Request, copro: str, lots: list[int] = Form(...),
+                       date_acte: date = Form(...), acquereur: str = Form(""), notaire: str = Form("")):
+    exiger(request, copro)
+    try:
+        m = A.etat_date.enregistrer_vente(A.DOSSIER_DATA, copro, A.fiche_de(copro), lots, date_acte,
+                                          acquereur, notaire)
+    except A.etat_date.EtatDateInvalide as e:
+        return retour(f"/app/{copro}/ventes#suivi", f"Vente non enregistrée : {e}", request)
+    return retour(f"/app/{copro}/ventes#suivi", f"Vente des lots {', '.join(map(str, m['lots']))} enregistrée.", request)
+
+
+@routeur.post("/{copro}/ventes/mutations/{mid}/avis")
+def ventes_avis(request: Request, copro: str, mid: str, recu_le: date = Form(...)):
+    exiger(request, copro)
+    try:
+        m = A.etat_date.avis_de_mutation(A.DOSSIER_DATA, copro, mid, recu_le)
+    except A.etat_date.EtatDateInvalide as e:
+        return retour(f"/app/{copro}/ventes#suivi", str(e), request)
+    s = A.etat_date.suivi(m, aujourdhui(request))
+    return retour(f"/app/{copro}/ventes#suivi", f"Avis de mutation enregistré : opposition possible jusqu'au "
+                  f"{date.fromisoformat(s['limite_opposition']):%d/%m/%Y}.", request)
+
+
+@routeur.post("/{copro}/ventes/mutations/{mid}/fiche")
+def ventes_fiche(request: Request, copro: str, mid: str):
+    exiger(request, copro)
+    try:
+        A.etat_date.marquer_fiche_a_jour(A.DOSSIER_DATA, copro, mid)
+    except A.etat_date.EtatDateInvalide as e:
+        return retour(f"/app/{copro}/ventes#suivi", str(e), request)
+    return retour(f"/app/{copro}/ventes#suivi", "Noté : le nouveau copropriétaire est inscrit.", request)
