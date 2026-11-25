@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Bulletin de santé · {{ b.copropriete }}</title>
+  <link rel="icon" type="image/png" href="/statique/icone_64.png">
+  <link rel="stylesheet" href="/statique/app.css">
+</head>
+<body class="public">
+<main class="public-page">
+  <p class="public-marque"><img src="/statique/icone_64.png" alt="" width="28" height="28"> Mitoyen</p>
+  <h1>Bulletin de santé de la copropriété</h1>
+  <p class="chapeau">{{ b.copropriete }} · {{ b.lots_principaux }} logements et locaux, {{ b.nb_lots }} lots · {{ b.gestion }} · au {{ b.etabli_le|date_fr }}</p>
+  {% include "_bulletin_liste.html" %}
+  <p class="discret">{{ b.avertissement }}</p>
+  <p class="discret">Établi avec <a href="https://mitoyen.app">Mitoyen</a>, l'outil open source des syndics bénévoles.</p>
+</main>
+</body>
+</html>

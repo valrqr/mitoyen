@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block titre %}Bulletin de santé{% endblock %}
+{% block contenu %}
+<p><a href="/app/{{ copro }}/documents#vente">← Retour aux documents</a></p>
+<h1>Bulletin de santé de la copropriété</h1>
+<p class="chapeau">Une page de faits, chacun rapproché de son repère. Partagez-la avec les copropriétaires ; un vendeur peut la joindre à son annonce. Rien de personnel n'y figure : les impayés sont donnés en tranches.</p>
+<p><a class="bouton" href="/app/{{ copro }}/bulletin.pdf" target="_blank">Ouvrir le PDF</a></p>
+
+{% include "_bulletin_liste.html" %}
+
+<h2 id="partage">Lien public</h2>
+{% if lien %}
+<p>Le bulletin est consultable par toute personne qui a ce lien. Il se met à jour tout seul.</p>
+<p><code class="lien-public">{{ lien }}</code></p>
+<div class="actions-vente">
+  <form method="post" action="/app/{{ copro }}/bulletin/partage"><input type="hidden" name="action" value="renouveler"><button type="submit" class="secondaire">Créer un nouveau lien</button></form>
+  <form method="post" action="/app/{{ copro }}/bulletin/partage"><input type="hidden" name="action" value="couper"><button type="submit" class="secondaire">Couper le lien</button></form>
+</div>
+{% else %}
+<p>Aucun lien public pour l'instant. En l'activant, toute personne qui reçoit le lien verra cette page, sans rien d'autre de la copropriété.</p>
+<form method="post" action="/app/{{ copro }}/bulletin/partage"><input type="hidden" name="action" value="activer"><button type="submit">Activer le lien public</button></form>
+{% endif %}
+
+<p class="discret">{{ b.avertissement }}</p>
+{% endblock %}

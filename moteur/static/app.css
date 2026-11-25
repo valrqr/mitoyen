@@ -243,3 +243,21 @@ details.aux ul { margin: .3rem 0 0; padding-left: 1.1rem; font-size: .9rem; }
 .vente-suivi h3 { margin: 0; }
 .actions-vente { display: flex; flex-wrap: wrap; gap: 1rem; align-items: end; }
 .actions-vente .decision label { display: inline-flex; flex-direction: column; gap: .2rem; }
+
+/* Bulletin de santé */
+.bulletin { list-style: none; margin: 1.2rem 0; padding: 0; border-top: 2px solid var(--encre); }
+.bulletin li { display: grid; grid-template-columns: 2rem 1fr 1fr; gap: .9rem; padding: .9rem 0; border-bottom: 1px solid var(--filet); align-items: start; }
+.b-marque { width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; font-weight: 600;
+            color: var(--papier); background: var(--encre); }
+.b-attention .b-marque { background: var(--orange); }
+.b-inconnu .b-marque { background: var(--alu); color: var(--encre); }
+.b-valeur strong { font-size: 1.1rem; }
+.b-repere, .b-legende { color: var(--gris); font-size: .9rem; }
+.lien-public { word-break: break-all; }
+.public { background: var(--pierre); }
+.public-page { max-width: 48rem; margin: 0 auto; padding: 2rem 1.2rem 3rem; background: var(--papier); min-height: 100vh; }
+.public-marque { display: flex; align-items: center; gap: .5rem; font-weight: 600; font-size: 1.2rem; margin: 0 0 1.5rem; }
+@media screen and (max-width: 640px) {
+  .bulletin li { grid-template-columns: 2rem 1fr; }
+  .b-valeur { grid-column: 2; }
+}

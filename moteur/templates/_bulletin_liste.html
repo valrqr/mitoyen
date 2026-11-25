@@ -1,0 +1,11 @@
+<ul class="bulletin">
+  {% for i in b.indicateurs %}
+  <li class="b-{{ i.etat }}">
+    <span class="b-marque" aria-hidden="true">{{ {"ok": "✓", "attention": "!", "inconnu": "?"}[i.etat] }}</span>
+    <div class="b-theme"><strong>{{ i.theme }}</strong><br><span class="b-repere">{{ i.repere }}</span></div>
+    <div class="b-valeur"><strong>{{ i.valeur }}</strong>{% if i.detail %}<br><span class="b-repere">{{ i.detail }}</span>{% endif %}</div>
+    <span class="visuellement-cache">{{ {"ok": "conforme au repère", "attention": "point d'attention", "inconnu": "information non disponible"}[i.etat] }}</span>
+  </li>
+  {% endfor %}
+</ul>
+<p class="b-legende">✓ conforme au repère · ! point d'attention · ? information non disponible. Aucune note : chaque fait est rapproché de son repère, à chacun d'en juger.</p>

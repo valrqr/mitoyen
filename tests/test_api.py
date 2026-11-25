@@ -1625,3 +1625,23 @@ def test_interface_vente_etat_date_et_suivi():
     # Le dossier pour la promesse prend désormais les impayés du vendeur dans la compta
     r = n.post("/app/mimosas/documents/vente", data={"lots": ["9"]})
     assert "Dossier de vente prêt" in r.text
+
+
+def test_interface_bulletin_de_sante_et_lien_public():
+    import re
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    n.get("/app/mimosas", params={"au": "2027-03-15"})
+    t = n.get("/app/mimosas/bulletin").text
+    assert "Bulletin de santé de la copropriété" in t and "Fonds de travaux" in t and "Activer le lien public" in t
+    r = n.get("/app/mimosas/bulletin.pdf")
+    assert r.status_code == 200 and r.content[:4] == b"%PDF"
+    t = n.post("/app/mimosas/bulletin/partage", data={"action": "activer"}).text
+    lien = re.search(r"(/bulletin/mimosas/[A-Za-z0-9_-]+)", t).group(1)
+    public = _navigateur()                                       # sans session
+    r = public.get(lien)
+    assert r.status_code == 200 and "Fonds de travaux" in r.text and "noindex" in r.text
+    assert "CP0" not in r.text                                   # rien de personnel
+    n.post("/app/mimosas/bulletin/partage", data={"action": "couper"})
+    assert public.get(lien).status_code == 404
+    assert n.post("/app/mimosas/bulletin/partage", data={"action": "autre"}).status_code == 400

@@ -1219,3 +1219,35 @@ def ventes_fiche(request: Request, copro: str, mid: str):
     except A.etat_date.EtatDateInvalide as e:
         return retour(f"/app/{copro}/ventes#suivi", str(e), request)
     return retour(f"/app/{copro}/ventes#suivi", "Noté : le nouveau copropriétaire est inscrit.", request)
+
+
+# --------------------------------------------------------------------------- #
+# Bulletin de santé de la copropriété
+# --------------------------------------------------------------------------- #
+@routeur.get("/{copro}/bulletin", response_class=HTMLResponse)
+def bulletin_page(request: Request, copro: str):
+    exiger(request, copro)
+    b = A.bulletin.depuis_mitoyen(A.fiche_de(copro), A.DOSSIER_SORTIE, A.DOSSIER_DATA, copro, aujourdhui(request))
+    return page(request, "bulletin.html", copro, onglet="documents", b=b, lien=A.lien_bulletin(copro))
+
+
+@routeur.get("/{copro}/bulletin.pdf")
+def bulletin_pdf(request: Request, copro: str):
+    exiger(request, copro)
+    b = A.bulletin.depuis_mitoyen(A.fiche_de(copro), A.DOSSIER_SORTIE, A.DOSSIER_DATA, copro, aujourdhui(request))
+    with tempfile.TemporaryDirectory() as d:
+        pdf = A.bulletin.generer_pdf(b, Path(d) / "bulletin.pdf").read_bytes()
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="bulletin_sante_{copro}.pdf"',
+                             "Cache-Control": "no-store"})
+
+
+@routeur.post("/{copro}/bulletin/partage")
+def bulletin_partage(request: Request, copro: str, action: str = Form(...)):
+    exiger(request, copro)
+    if action not in ("activer", "couper", "renouveler"):
+        raise HTTPException(400)
+    A.bulletin.partager(A.DOSSIER_DATA, copro, action != "couper", renouveler=action == "renouveler")
+    return retour(f"/app/{copro}/bulletin#partage", {"activer": "Lien public activé.", "couper": "Lien public coupé.",
+                                                      "renouveler": "Nouveau lien créé : l'ancien ne fonctionne plus."}[action],
+                  request)

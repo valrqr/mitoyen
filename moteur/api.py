@@ -116,6 +116,7 @@ import impayes  # noqa: E402
 import compta  # noqa: E402
 import annexes  # noqa: E402
 import etat_date  # noqa: E402
+import bulletin  # noqa: E402
 import rappel_ag  # noqa: E402
 import reglement  # noqa: E402
 import meubles_tourisme  # noqa: E402
@@ -1358,6 +1359,24 @@ def _page_signaler(copro: str, message: str | None = None, erreur: str | None = 
         signalements.URGENCES + signalements.astreintes(fiche), signalements.vue_publique(donnees),
         message, erreur, saisie)
     return HTMLResponse(html, status_code=statut, headers={"Cache-Control": "no-store"})
+
+
+def lien_bulletin(copro: str) -> str | None:
+    r = bulletin.reglages(DOSSIER_DATA, copro)
+    return f"{URL_PUBLIQUE}/bulletin/{copro}/{r['jeton']}" if r.get("actif") and r.get("jeton") else None
+
+
+@app.get("/bulletin/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
+def page_bulletin_public(request: Request, copro: str = Copro, jeton: str = Jeton):
+    """Le bulletin de santé, partagé par le syndic : aucune donnée personnelle."""
+    from . import interface
+    if copro not in lister_copros() or not bulletin.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return HTMLResponse(page_signalement._page(
+            "Lien invalide", "", "<h1>Lien invalide</h1><p class=\"erreur\">Ce bulletin n’est plus partagé, ou son "
+            "lien a été renouvelé. Demandez le lien à jour au vendeur ou au syndic.</p>"), status_code=404)
+    b = bulletin.depuis_mitoyen(fiche_de(copro), DOSSIER_SORTIE, DOSSIER_DATA, copro, date.today())
+    return interface.templates.TemplateResponse(request, "bulletin_public.html", {"b": b},
+                                                headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
 
 
 @app.get("/signaler/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
