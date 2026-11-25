@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block titre %}Annexes comptables {{ N }}{% endblock %}
+{% block contenu %}
+<p><a href="/app/{{ copro }}/comptes">← Retour à la comptabilité</a></p>
+<h1>Annexes comptables de l'exercice {{ N }}</h1>
+<p class="chapeau">Les cinq annexes à joindre à la convocation de l'assemblée générale qui approuve les comptes, du {{ r.du|date_fr }} au {{ r.au|date_fr }}. Elles se calculent à partir de ce que vous avez déjà saisi : rien n'est à recopier.</p>
+
+<nav class="exercices" aria-label="Exercice">
+  <a href="?exercice={{ N - 1 }}">← Exercice {{ N - 1 }}</a>
+  <a href="?exercice={{ N + 1 }}">Exercice {{ N + 1 }} →</a>
+</nav>
+
+<div class="colonnes">
+  <div>
+    <h2 id="controles">Avant de les envoyer</h2>
+    <ul class="controles">
+      {% for c in r.controles %}
+      <li class="{{ 'ok' if c.ok else 'ko' }}">
+        <span class="marque-controle" aria-hidden="true">{{ "✓" if c.ok else "!" }}</span>
+        <span><strong>{{ c.controle }}</strong><br><span class="discret">{{ c.detail }}</span></span>
+        <span class="visuellement-cache">{{ "vérifié" if c.ok else "à régler" }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  <aside class="chiffres">
+    <div class="chiffre neutre"><span>Le document</span><b>5 annexes</b>
+      <small>{{ "Prêt à joindre à la convocation" if r.pret else "Porte la mention PROJET tant qu'un point reste à régler" }}</small></div>
+    <p><a class="bouton" href="/app/{{ copro }}/comptes/annexes.pdf?exercice={{ N }}" target="_blank">Ouvrir le PDF</a></p>
+  </aside>
+</div>
+
+{% for a in r.annexes %}
+<section class="annexe" id="annexe-{{ a.numero }}">
+  <h2><span class="discret">Annexe {{ a.numero }}</span><br>{{ a.titre }}</h2>
+  {% if a.vide %}
+  <div class="vide">Néant : aucun travaux ni opération exceptionnelle à présenter.</div>
+  {% else %}
+  <div class="defile">
+  <table class="table annexe-table">
+    <thead><tr><th></th>{% for c in a.colonnes %}<th class="nombre">{{ c }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for l in a.lignes %}
+      {% if l.type in ("titre", "intertitre") %}
+      <tr class="a-{{ l.type }}"><th colspan="{{ a.colonnes|length + 1 }}">{{ l.libelle }}</th></tr>
+      {% else %}
+      <tr class="a-{{ l.type }}">
+        <td>{% if l.compte and l.type == "ligne" %}<span class="discret">{{ l.compte }}</span> {% endif %}{{ l.libelle }}</td>
+        {% for v in l.valeurs %}<td class="nombre">{{ montant(v) }}</td>{% endfor %}
+      </tr>
+      {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% endif %}
+  {% if a.numero == 1 %}
+  <details class="aux">
+    <summary>Liste jointe : copropriétaires débiteurs ({{ a.listes.debiteurs|length }}) et créditeurs ({{ a.listes.crediteurs|length }})</summary>
+    <table class="table">
+      <tbody>
+        {% for n, m in a.listes.debiteurs %}<tr><td>{{ n }}</td><td>doit</td><td class="nombre">{{ m|euros }}</td></tr>{% endfor %}
+        {% for n, m in a.listes.crediteurs %}<tr><td>{{ n }}</td><td>a versé en trop</td><td class="nombre">{{ m|euros }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </details>
+  {% endif %}
+  {% if a.numero in (2, 3) %}{% for n in r.notes %}<p class="discret">{{ n }}</p>{% endfor %}{% endif %}
+</section>
+{% endfor %}
+
+<h2 id="budgets">Budgets prévisionnels</h2>
+<p>Les colonnes « budget » des annexes 2 et 3 : le budget voté pour {{ N }} et {{ N + 1 }}, et celui que vous proposerez au vote pour {{ N + 2 }}. Une ligne par poste : <em>Libellé ; clé ; montant</em>. Clés : {% for k, c in cles.items() %}<code>{{ k }}</code> ({{ c.libelle|lower }}){{ ", " if not loop.last }}{% endfor %}.</p>
+{% for k in (N, N + 1, N + 2) %}
+<details class="replie"{% if not connus[k] and k != N + 1 %} open{% endif %}>
+  <summary>Budget {{ k }} {% if k == N + 2 %}(à voter){% else %}(voté){% endif %} · {{ "enregistré" if connus[k] else "à saisir" }}</summary>
+  <form class="formulaire" method="post" action="/app/{{ copro }}/comptes/budgets">
+    <input type="hidden" name="exercice" value="{{ k }}">
+    <input type="hidden" name="retour_exercice" value="{{ N }}">
+    <label>Postes du budget {{ k }}<textarea name="postes" rows="9" spellcheck="false">{{ saisie[k] }}</textarea></label>
+    <div><button type="submit">Enregistrer le budget {{ k }}</button>
+      {% if not connus[k] %}<span class="discret">Prérempli avec le dernier budget connu : à ajuster.</span>{% endif %}</div>
+  </form>
+</details>
+{% endfor %}
+
+<h2 id="travaux">Travaux votés hors budget</h2>
+<p>Travaux de l'article 14-2 et opérations exceptionnelles votés en AG. Rattachez-y leurs factures dans la <a href="/app/{{ copro }}/comptes#factures">saisie des factures</a> : ils alimentent les annexes 4 et 5.</p>
+{% if operations %}
+<table class="table">
+  <thead><tr><th>Travaux</th><th>Voté le</th><th class="nombre">Montant voté</th><th>État</th></tr></thead>
+  <tbody>
+    {% for o in operations %}
+    <tr>
+      <td>{{ o.libelle }}<br><span class="discret">{{ cles[o.cle].libelle if o.cle in cles else o.cle }}</span></td>
+      <td class="nombre">{{ o.vote_le|date_fr }}</td>
+      <td class="nombre">{{ o.montant_vote|euros }}</td>
+      <td>{% if o.cloturee_le %}Clôturé le {{ o.cloturee_le|date_fr }}{% else %}
+        <form class="decision" method="post" action="/app/{{ copro }}/comptes/operations/{{ o.id }}/cloture">
+          <input type="hidden" name="retour_exercice" value="{{ N }}">
+          <input type="date" name="date" required aria-label="Date de clôture">
+          <button type="submit">Clôturer</button>
+        </form>{% endif %}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+<form class="formulaire" method="post" action="/app/{{ copro }}/comptes/operations">
+  <input type="hidden" name="retour_exercice" value="{{ N }}">
+  <div class="champs">
+    <label>Travaux ou opération <input name="libelle" required maxlength="120" placeholder="Réfection de la toiture"></label>
+    <label>Voté en AG le <input type="date" name="vote_le" required></label>
+  </div>
+  <div class="champs">
+    <label>Montant voté <input name="montant" inputmode="decimal" required placeholder="0,00"></label>
+    <label>Clé de répartition
+      <select name="cle">{% for k, c in cles.items() %}<option value="{{ k }}">{{ c.libelle }}</option>{% endfor %}</select></label>
+    <label>Subventions ou emprunt à recevoir <input name="a_recevoir" inputmode="decimal" placeholder="0,00"></label>
+  </div>
+  <div><button type="submit">Enregistrer les travaux votés</button></div>
+</form>
+
+<p class="discret">{{ r.avertissement }}</p>
+{% endblock %}

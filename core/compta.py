@@ -158,7 +158,8 @@ def _ecrire(f: Path, contenu) -> None:
 def charger(racine: Path, copro: str) -> dict:
     d = dossier(racine, copro)
     return {"ouverture": _lire(d / "ouverture.json", None), "factures": _lire(d / "factures.json", []),
-            "depenses": _lire(d / "depenses.json", {})}
+            "depenses": _lire(d / "depenses.json", {}), "budgets": _lire(d / "budgets.json", {}),
+            "operations_votees": _lire(d / "operations_votees.json", [])}
 
 
 def definir_ouverture(racine: Path, copro: str, jour: date, banque: str, soldes_coproprietaires: dict,
@@ -174,7 +175,8 @@ def definir_ouverture(racine: Path, copro: str, jour: date, banque: str, soldes_
 
 
 def ajouter_facture(racine: Path, copro: str, fournisseur: str, jour: date, montant, compte: str,
-                    libelle: str, poste: str | None = None) -> dict:
+                    libelle: str, poste: str | None = None, cle: str | None = None,
+                    operation: str | None = None) -> dict:
     """Une facture reçue : la charge est constatée à sa date, qu'elle soit payée ou non."""
     if not fournisseur.strip():
         raise ComptaInvalide("Indiquer le fournisseur")
@@ -185,13 +187,15 @@ def ajouter_facture(racine: Path, copro: str, fournisseur: str, jour: date, mont
         raise ComptaInvalide("Le montant d'une facture est positif (un avoir se saisit à part)")
     fac = charger(racine, copro)["factures"]
     f = {"id": f"F{len(fac) + 1:04d}", "fournisseur": fournisseur.strip()[:60], "date": jour.isoformat(),
-         "montant": str(m), "compte": str(compte), "libelle": libelle.strip()[:120], "poste": poste}
+         "montant": str(m), "compte": str(compte), "libelle": libelle.strip()[:120], "poste": poste, "cle": cle,
+         "operation": operation}
     _ecrire(dossier(racine, copro) / "factures.json", fac + [f])
     return f
 
 
 def affecter_depense(racine: Path, copro: str, op_id: str, *, facture: str | None = None,
-                     compte: str | None = None, fournisseur: str | None = None, poste: str | None = None) -> dict:
+                     compte: str | None = None, fournisseur: str | None = None, poste: str | None = None,
+                     cle: str | None = None, operation: str | None = None) -> dict:
     """Explique un débit du relevé : soit le règlement d'une facture saisie, soit une
     dépense payée directement (frais bancaires, petit achat) avec son compte de charge."""
     dep = charger(racine, copro)["depenses"]
@@ -200,7 +204,8 @@ def affecter_depense(racine: Path, copro: str, op_id: str, *, facture: str | Non
     elif compte:
         if not str(compte).startswith("6"):
             raise ComptaInvalide("Une dépense directe va dans un compte de charge (classe 6)")
-        a = {"compte": str(compte), "fournisseur": (fournisseur or "").strip()[:60] or None, "poste": poste}
+        a = {"compte": str(compte), "fournisseur": (fournisseur or "").strip()[:60] or None, "poste": poste,
+             "cle": cle, "operation": operation}
     else:
         raise ComptaInvalide("Indiquer la facture réglée ou le compte de charge")
     dep[op_id] = a
@@ -208,16 +213,71 @@ def affecter_depense(racine: Path, copro: str, op_id: str, *, facture: str | Non
     return a
 
 
+def enregistrer_budget(racine: Path, copro: str, exercice: int, postes: list[dict]) -> list[dict]:
+    """Le budget d'un exercice, poste par poste ({libelle, cle, montant, compte?}) : celui voté pour
+    l'exercice en cours, ou celui à soumettre au vote. Il alimente les colonnes « budget » des annexes."""
+    propres = []
+    for p in postes:
+        m = _d(p.get("montant") or 0)
+        if m < 0:
+            raise ComptaInvalide(f"Montant négatif pour « {p.get('libelle')} »")
+        propres.append({"libelle": str(p["libelle"])[:120], "cle": str(p["cle"]), "montant": str(m),
+                        **({"compte": str(p["compte"])} if p.get("compte") else {})})
+    tous = charger(racine, copro)["budgets"]
+    tous[str(int(exercice))] = propres
+    _ecrire(dossier(racine, copro) / "budgets.json", tous)
+    return propres
+
+
+def voter_operation(racine: Path, copro: str, libelle: str, cle: str, montant, vote_le: date,
+                    nature: str = "travaux", a_recevoir="0") -> dict:
+    """Travaux de l'article 14-2 ou opération exceptionnelle votés en AG, hors budget prévisionnel.
+    Les factures, dépenses et appels qui s'y rattachent alimentent les annexes 4 et 5.
+    a_recevoir : subventions et emprunts accordés mais pas encore reçus (annexe 5, colonne F)."""
+    if not libelle.strip():
+        raise ComptaInvalide("Indiquer l'objet des travaux ou de l'opération")
+    m, r = _d(montant), _d(a_recevoir or 0)
+    if m <= 0 or r < 0:
+        raise ComptaInvalide("Le montant voté est positif")
+    ops = charger(racine, copro)["operations_votees"]
+    o = {"id": f"OPV{len(ops) + 1:03d}", "libelle": libelle.strip()[:120], "cle": cle, "montant_vote": str(m),
+         "vote_le": vote_le.isoformat(), "nature": nature, "a_recevoir": str(r), "cloturee_le": None}
+    _ecrire(dossier(racine, copro) / "operations_votees.json", ops + [o])
+    return o
+
+
+def cloturer_operation(racine: Path, copro: str, op_id: str, jour: date) -> dict:
+    """Travaux terminés et réglés, comptes de l'opération approuvés : elle sort de l'annexe 5."""
+    ops = charger(racine, copro)["operations_votees"]
+    for o in ops:
+        if o["id"] == op_id:
+            o["cloturee_le"] = jour.isoformat()
+            _ecrire(dossier(racine, copro) / "operations_votees.json", ops)
+            return o
+    raise ComptaInvalide(f"Opération inconnue : {op_id}")
+
+
+def budgets(fiche: dict, racine: Path, copro: str) -> dict[int, list[dict]]:
+    """Les budgets connus, par exercice : ceux enregistrés, et celui de la fiche pour son exercice."""
+    res = {int(k): v for k, v in charger(racine, copro)["budgets"].items()}
+    bp = fiche.get("budget_previsionnel") or {}
+    if bp.get("exercice") and int(bp["exercice"]) not in res:
+        res[int(bp["exercice"])] = bp.get("postes", [])
+    return res
+
+
 # --------------------------------------------------------------------------- #
 # Journal
 # --------------------------------------------------------------------------- #
 def _ecriture(jour: str, libelle: str, piece: str, lignes: list[tuple[str, Decimal, Decimal]], source: str) -> dict:
-    deb = sum((l[1] for l in lignes), ZERO)
+    deb = sum((l[1] for l in lignes), ZERO)   # une ligne : (compte, débit, crédit[, {"cle", "operation"}])
     cred = sum((l[2] for l in lignes), ZERO)
     if deb != cred:
         raise ComptaInvalide(f"Écriture déséquilibrée ({piece}) : {deb} ≠ {cred}")
     return {"date": jour, "libelle": libelle, "piece": piece, "source": source,
-            "lignes": [{"compte": c, "debit": d, "credit": k} for c, d, k in lignes if d or k]}
+            "lignes": [{"compte": l[0], "debit": l[1], "credit": l[2],
+                        **({k: v for k, v in l[3].items() if v} if len(l) > 3 and l[3] else {})}
+                       for l in lignes if l[1] or l[2]]}
 
 
 def _rubrique_compte(rubrique: str) -> tuple[str, str]:
@@ -227,10 +287,20 @@ def _rubrique_compte(rubrique: str) -> tuple[str, str]:
     return "4501", "701"
 
 
+def _cles_des_rubriques(fiche: dict) -> dict[str, str]:
+    """Libellé et identifiant d'une rubrique d'appel -> sa clé de répartition."""
+    try:
+        from fiche_copro import rubriques
+        return {k: r["cle"] for r in rubriques(fiche) for k in (r["libelle"], r["id"])}
+    except (KeyError, TypeError, ValueError):
+        return {}
+
+
 def journal(fiche: dict, sources: dict) -> list[dict]:
     """sources = {"ouverture", "dues", "ajustements", "operations", "rapprochement",
     "factures", "depenses"} — le journal complet, trié par date."""
     E = []
+    cles_rub = _cles_des_rubriques(fiche)
     o = sources.get("ouverture")
     debut = o["date"] if o else ""       # ce qui précède la reprise est déjà dans les soldes d'ouverture
     if o:
@@ -252,7 +322,8 @@ def journal(fiche: dict, sources: dict) -> list[dict]:
         lignes = []
         for x in e["detail"]:
             cpt, contre = _rubrique_compte(x["rubrique"])
-            lignes += [(tiers(cpt, e["coproprietaire"]), _d(x["montant"]), ZERO), (contre, ZERO, _d(x["montant"]))]
+            lignes += [(tiers(cpt, e["coproprietaire"]), _d(x["montant"]), ZERO),
+                       (contre, ZERO, _d(x["montant"]), {"cle": cles_rub.get(x["rubrique"])})]
         E.append(_ecriture(e["date"], e["libelle"], e["id"], lignes, "appel"))
 
     for a in sources.get("ajustements", []):
@@ -261,7 +332,8 @@ def journal(fiche: dict, sources: dict) -> list[dict]:
             continue                          # repris par les soldes d'ouverture
         cpt, contre = AJUSTEMENTS["avoir" if m < 0 else a["nature"]]
         t = tiers(cpt, a["coproprietaire"])
-        lignes = [(t, m, ZERO), (contre, ZERO, m)] if m > 0 else [(contre, -m, ZERO), (t, ZERO, -m)]
+        tag = {"operation": a.get("operation")}
+        lignes = [(t, m, ZERO), (contre, ZERO, m, tag)] if m > 0 else [(contre, -m, ZERO, tag), (t, ZERO, -m)]
         E.append(_ecriture(a["date"], a["libelle"], a["id"], lignes, "ajustement"))
 
     factures = {f["id"]: f for f in sources.get("factures", [])}
@@ -270,7 +342,8 @@ def journal(fiche: dict, sources: dict) -> list[dict]:
             continue                          # une facture antérieure non payée se reprend en fournisseur
         m = _d(f["montant"])
         E.append(_ecriture(f["date"], f"{f['fournisseur']} — {f['libelle']}", f["id"],
-                           [(f["compte"], m, ZERO), (tiers("401", f["fournisseur"]), ZERO, m)], "facture"))
+                           [(f["compte"], m, ZERO, {"cle": f.get("cle"), "operation": f.get("operation")}),
+                            (tiers("401", f["fournisseur"]), ZERO, m)], "facture"))
 
     rap = {r["operation"]: r for r in sources.get("rapprochement", [])}
     dep = sources.get("depenses", {})
@@ -295,7 +368,10 @@ def journal(fiche: dict, sources: dict) -> list[dict]:
                 contre = a["compte"]
             else:
                 contre = "471"
-            E.append(_ecriture(op["date"], op["libelle"], piece, [(contre, -m, ZERO), ("512", ZERO, -m)], "banque"))
+            E.append(_ecriture(op["date"], op["libelle"], piece,
+                               [(contre, -m, ZERO, {"cle": a.get("cle"), "operation": a.get("operation")}
+                                 if contre.startswith("6") else None),
+                                ("512", ZERO, -m)], "banque"))
             continue
         # non expliquée : compte d'attente, pour que la banque tombe juste
         lignes = [("512", m, ZERO), ("471", ZERO, m)] if m > 0 else [("471", -m, ZERO), ("512", ZERO, -m)]

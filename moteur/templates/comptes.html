@@ -19,6 +19,7 @@
       {% endfor %}
     </ul>
     {% if tout_ok %}<p class="discret">Tout est en ordre au {{ e.au|date_fr }} : les comptes peuvent être présentés.</p>{% endif %}
+    <p><a class="bouton" href="/app/{{ copro }}/comptes/annexes">Annexes comptables pour l'AG</a></p>
   </div>
   <aside class="chiffres">
     <div class="chiffre neutre"><span>Banque (compte 512)</span><b>{{ (banque.solde if banque else 0)|euros }}</b>
@@ -106,6 +107,20 @@
         {% for c, l in comptes_charge %}<option value="{{ c }}">{{ c }} · {{ l }}</option>{% endfor %}
       </select></label>
     <label>Libellé (facultatif) <input name="libelle" maxlength="120" placeholder="Entretien trimestriel"></label>
+  </div>
+  <div class="champs">
+    <label>Clé de répartition
+      <select name="cle">
+        <option value="">Celle du budget pour cette nature</option>
+        {% for k, c in cles.items() %}<option value="{{ k }}">{{ c.libelle }}</option>{% endfor %}
+      </select></label>
+    {% if operations_votees %}
+    <label>Travaux votés en AG (hors budget)
+      <select name="operation">
+        <option value="">Non : charge courante</option>
+        {% for o in operations_votees %}<option value="{{ o.id }}">{{ o.libelle }}</option>{% endfor %}
+      </select></label>
+    {% endif %}
   </div>
   <div><button type="submit">Enregistrer la facture</button>
     <span class="discret">La charge compte à la date de la facture, payée ou non.</span></div>

@@ -48,12 +48,37 @@ Les encaissements non rattachés à un copropriétaire se règlent dans **Impay�
 3. Le compte d'attente 471 est soldé.
 4. Les soldes d'ouverture sont saisis.
 
+## Les annexes comptables
+
+L'écran **Comptabilité → Annexes comptables pour l'AG** présente les cinq annexes de l'arrêté du
+14 mars 2005 pour le dernier exercice clos, et le PDF à joindre à la convocation (`core/annexes.py`).
+
+| Annexe | D'où viennent les chiffres |
+|---|---|
+| 1. État financier après répartition | Soldes du journal à la clôture. Les charges courantes sont réparties entre les copropriétaires selon leurs tantièmes, lot par lot ; leurs provisions appelées viennent en déduction. Le solde des travaux reste en attente (compte 12). Liste nominative des débiteurs et des créditeurs jointe. |
+| 2. Compte de gestion général | Charges et produits du journal, par ligne du modèle (601 eau… 66 frais bancaires), et les budgets N, N+1 et N+2. |
+| 3. Opérations courantes par clé | La clé vient de la facture, sinon du poste du budget pour cette nature de charge, sinon les charges générales. |
+| 4. Travaux et opérations exceptionnelles | Les travaux votés en AG (hors budget), avec les factures et appels qui y sont rattachés. |
+| 5. Travaux votés non clôturés | Cumul depuis le vote : votés, payés, réalisés, appelés, en attente (= compte 12), subventions ou emprunt à recevoir. |
+
+Ce qu'il faut saisir en plus : les **budgets** (celui voté pour N et N+1, celui à voter pour N+2,
+une ligne `Libellé ; clé ; montant` par poste) et les **travaux votés hors budget** (objet, date du
+vote, montant, clé). Une facture de travaux se rattache à son opération au moment de la saisie.
+
+Ce que Mitoyen ne sait pas, il le dit : si l'exercice N-1 n'était pas tenu dans Mitoyen, la colonne
+« N-1 approuvé » affiche « — » avec une note (et le total des charges repris de `comptes_approuves`
+quand il existe). Tant qu'un contrôle n'est pas vert (compte d'attente non soldé, budget manquant,
+exercice non clos, état financier déséquilibré), le PDF porte la mention PROJET.
+
+⚠️ Mise en forme indicative, à comparer avec les modèles de l'arrêté du 14 mars 2005 (Légifrance).
+Pas un conseil comptable ; l'ADIL renseigne gratuitement.
+
 ## Étapes
 
 | Étape | Contenu | État |
 | --- | --- | --- |
 | 1. Socle | Plan comptable, journal recalculé, balance, grand livre, contrôles | Fait |
 | 2. Interface | Saisie des factures et des soldes d'ouverture, affectation des dépenses, balance à l'écran | Fait |
-| 3. Annexes | Les 5 annexes réglementaires jointes à la convocation de l'AG (état financier, compte de gestion général, budget voté et réalisé, travaux, opérations non soldées) | À faire |
+| 3. Annexes | Les 5 annexes réglementaires jointes à la convocation de l'AG (état financier, compte de gestion général, budget voté et réalisé, travaux, opérations non soldées) | Fait |
 | 4. Clôture | Répartition des charges réelles par clé et par lot, régularisation des provisions, verrouillage de l'exercice approuvé | À faire |
 | 5. Export | Journal et balance en CSV pour un expert-comptable ou un contrôleur des comptes | À faire |

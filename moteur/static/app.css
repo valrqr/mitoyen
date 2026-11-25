@@ -224,3 +224,16 @@ details.aux ul { margin: .3rem 0 0; padding-left: 1.1rem; font-size: .9rem; }
   .barre-annee .an { font-size: .7rem; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+
+/* Annexes comptables */
+.exercices { display: flex; justify-content: space-between; margin: 0 0 1rem; }
+.annexe { margin: 2.2rem 0; }
+.annexe h2 { line-height: 1.25; }
+.defile { overflow-x: auto; }
+.annexe-table { min-width: 40rem; }
+.annexe-table th.nombre { white-space: normal; vertical-align: bottom; }
+.annexe-table tr.a-titre th { text-align: left; padding-top: 1.1rem; border-bottom: 2px solid var(--encre); }
+.annexe-table tr.a-intertitre th { text-align: left; font-weight: 600; color: var(--gris, #5c5c5c); }
+.annexe-table tr.a-sous_total td { font-weight: 600; border-top: 1px solid var(--encre); }
+.annexe-table tr.a-total td { font-weight: 700; background: var(--papier); border-top: 2px solid var(--encre); }
+.formulaire textarea { width: 100%; font-family: ui-monospace, monospace; font-size: .9rem; }

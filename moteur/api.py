@@ -114,6 +114,7 @@ import vente  # noqa: E402
 import banque  # noqa: E402
 import impayes  # noqa: E402
 import compta  # noqa: E402
+import annexes  # noqa: E402
 import rappel_ag  # noqa: E402
 import reglement  # noqa: E402
 import meubles_tourisme  # noqa: E402

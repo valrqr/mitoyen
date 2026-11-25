@@ -1557,3 +1557,38 @@ def test_interface_comptabilite():
     assert g.status_code == 200 and "ouverture" in g.text and "<td>AN</td>" in g.text
     assert n.get("/app/mimosas/comptes/compte/4501.CP03").status_code == 200
     assert n.get("/app/mimosas/comptes/compte/..%2F..").status_code == 404
+
+
+def test_interface_annexes_comptables():
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    n.get("/app/mimosas", params={"au": "2028-03-15"})
+    n.post("/app/mimosas/comptes/ouverture", data={"date": "2027-01-01", "banque": "9 000", "fonds_travaux": "9 000"})
+    t = n.get("/app/mimosas/comptes/annexes").text          # exercice clos par défaut : 2027
+    assert "Annexes comptables de l'exercice 2027" in t and "Annexe 5" in t and "Budget 2029 (à voter)" in t
+    assert "Néant" in t                                       # pas encore de travaux votés
+    # budget à voter : une ligne illisible est refusée, une ligne propre enregistrée
+    t = n.post("/app/mimosas/comptes/budgets", data={"exercice": "2029", "retour_exercice": "2027",
+                                                    "postes": "Assurance ; inconnue ; 100"}).text
+    assert "Clé inconnue" in t
+    t = n.post("/app/mimosas/comptes/budgets", data={"exercice": "2029", "retour_exercice": "2027",
+                                                    "postes": "Assurance ; generales ; 4 500\nMaintenance ascenseur ; ascenseur ; 2 500"}).text
+    assert "Budget 2029 enregistré" in t and "7 000,00" in t
+    # travaux votés, puis une facture rattachée : ils apparaissent aux annexes 4 et 5
+    t = n.post("/app/mimosas/comptes/operations", data={"libelle": "Réfection toiture", "cle": "generales",
+                                                       "montant": "12 000", "vote_le": "2026-05-20",
+                                                       "retour_exercice": "2027"}).text
+    assert "Réfection toiture enregistré" in t
+    t = n.get("/app/mimosas/comptes").text
+    assert "Travaux votés en AG" in t and "OPV001" in t
+    n.post("/app/mimosas/comptes/factures", data={"fournisseur": "Couvreur Exemple", "date": "2027-06-10",
+                                                 "montant": "3 000", "compte": "671", "libelle": "Acompte",
+                                                 "operation": "OPV001"})
+    t = n.get("/app/mimosas/comptes/annexes", params={"exercice": 2027}).text
+    assert "Réfection toiture (voté le 20/05/2026)" in t and "12 000,00" in t
+    r = n.get("/app/mimosas/comptes/annexes.pdf", params={"exercice": 2027})
+    assert r.status_code == 200 and r.content[:4] == b"%PDF"
+    t = n.post("/app/mimosas/comptes/operations/OPV001/cloture", data={"date": "2027-12-31",
+                                                                     "retour_exercice": "2027"}).text
+    assert "clôturé le 31/12/2027" in t
+    assert n.get("/app/mimosas/comptes/annexes", params={"exercice": 1}).status_code == 404

@@ -19,6 +19,7 @@ import hmac
 import json
 import os
 import re
+import tempfile
 from datetime import date, timedelta
 from decimal import Decimal
 from pathlib import Path
@@ -906,6 +907,8 @@ def comptes_page(request: Request, copro: str):
                 factures=factures, a_affecter=a_affecter, recettes=recettes, classes=classes,
                 total_debit=total_d, total_credit=total_c, comptes_charge=_comptes_charge(),
                 factures_ouvertes=[f for f in factures if not f["reglee"]],
+                cles=A.fiche_de(copro)["cles_repartition"],
+                operations_votees=[o for o in st["operations_votees"] if not o.get("cloturee_le")],
                 coproprietaires=sorted(fiche["coproprietaires"], key=lambda c: c["nom"]),
                 ouverture_ok=st["ouverture"] is not None, tout_ok=all(c["ok"] for c in e["controles"]))
 
@@ -937,11 +940,20 @@ async def comptes_ouverture(request: Request, copro: str):
 
 @routeur.post("/{copro}/comptes/factures")
 def comptes_facture(request: Request, copro: str, fournisseur: str = Form(...), jour: date = Form(..., alias="date"),
-                    montant: str = Form(...), compte: str = Form(...), libelle: str = Form("")):
+                    montant: str = Form(...), compte: str = Form(...), libelle: str = Form(""),
+                    cle: str = Form(""), operation: str = Form("")):
     exiger(request, copro)
+    C = A.compta
     try:
-        f = A.compta.ajouter_facture(A.DOSSIER_DATA, copro, fournisseur, jour, _montant(montant) or 0, compte,
-                                     libelle or A.compta.libelle_compte(compte))
+        st = C.charger(A.DOSSIER_DATA, copro)
+        if cle and cle not in A.fiche_de(copro)["cles_repartition"]:
+            raise C.ComptaInvalide("Clé de répartition inconnue")
+        op = next((o for o in st["operations_votees"] if o["id"] == operation), None)
+        if operation and op is None:
+            raise C.ComptaInvalide("Opération votée inconnue")
+        f = C.ajouter_facture(A.DOSSIER_DATA, copro, fournisseur, jour, _montant(montant) or 0, compte,
+                              libelle or C.libelle_compte(compte), cle=(op or {}).get("cle") or cle or None,
+                              operation=operation or None)
     except A.compta.ComptaInvalide as e:
         return retour(f"/app/{copro}/comptes#factures", f"Facture non enregistrée : {e}", request)
     return retour(f"/app/{copro}/comptes#factures", f"Facture {f['id']} enregistrée : {euros(f['montant'])} "
@@ -988,3 +1000,107 @@ def comptes_grand_livre(request: Request, copro: str, compte: str):
     return page(request, "grand_livre.html", copro, onglet="comptes", compte=compte,
                 libelle=C.libelle_compte(racine) + (f" — {nom}" if nom else ""), mouvements=mouvements,
                 solde=mouvements[-1]["solde"] if mouvements else C.ZERO, au=e["au"])
+
+
+# --------------------------------------------------------------------------- #
+# Annexes comptables (à joindre à la convocation de l'AG)
+# --------------------------------------------------------------------------- #
+def _exercice_clos(fiche: dict, jour: date) -> int:
+    """Le dernier exercice clos à cette date (celui dont on présente les comptes)."""
+    return jour.year if A.annexes.periode(fiche, jour.year)[1] < jour.isoformat() else jour.year - 1
+
+
+def _postes_texte(postes: list[dict]) -> str:
+    return "\n".join(f"{p['libelle']} ; {p['cle']} ; {str(p['montant']).replace('.', ',')}" for p in postes)
+
+
+@routeur.get("/{copro}/comptes/annexes", response_class=HTMLResponse)
+def comptes_annexes(request: Request, copro: str, exercice: int | None = None):
+    exiger(request, copro)
+    fiche = A.fiche_de(copro)
+    jour = aujourdhui(request)
+    N = exercice or _exercice_clos(fiche, jour)
+    if not 2000 <= N <= 2100:
+        raise HTTPException(404)
+    res = A.annexes.calculer(fiche, A.DOSSIER_SORTIE, A.DOSSIER_DATA, copro, N, jour)
+    res["controles"] = [{**c, "detail": re.sub(r"-?\d+\.\d{2}", lambda m: euros(m.group()), c["detail"])}
+                        for c in res["controles"]]
+    budgets = A.compta.budgets(fiche, A.DOSSIER_DATA, copro)
+    modele = budgets.get(N + 1) or budgets.get(N) or fiche["budget_previsionnel"]["postes"]
+    saisie = {k: _postes_texte(budgets.get(k) or modele) for k in (N, N + 1, N + 2)}
+    st = A.compta.charger(A.DOSSIER_DATA, copro)
+    return page(request, "annexes.html", copro, onglet="comptes", r=res, N=N, montant=A.annexes.montant,
+                saisie=saisie, connus={k: k in budgets for k in (N, N + 1, N + 2)},
+                cles=fiche["cles_repartition"], operations=st["operations_votees"])
+
+
+@routeur.get("/{copro}/comptes/annexes.pdf")
+def comptes_annexes_pdf(request: Request, copro: str, exercice: int):
+    exiger(request, copro)
+    if not 2000 <= exercice <= 2100:
+        raise HTTPException(404)
+    fiche = A.fiche_de(copro)
+    res = A.annexes.calculer(fiche, A.DOSSIER_SORTIE, A.DOSSIER_DATA, copro, exercice, aujourdhui(request))
+    with tempfile.TemporaryDirectory() as d:
+        pdf = A.annexes.generer_pdf(fiche, res, Path(d) / "annexes.pdf").read_bytes()
+    return Response(pdf, media_type="application/pdf",
+                    headers={"Content-Disposition": f'inline; filename="annexes_comptables_{exercice}_{copro}.pdf"',
+                             "Cache-Control": "no-store"})
+
+
+@routeur.post("/{copro}/comptes/budgets")
+def comptes_budget(request: Request, copro: str, exercice: int = Form(...), postes: str = Form(""),
+                   retour_exercice: int = Form(...)):
+    exiger(request, copro)
+    cible = f"/app/{copro}/comptes/annexes?exercice={retour_exercice}#budgets"
+    C = A.compta
+    cles = A.fiche_de(copro)["cles_repartition"]
+    try:
+        lignes = []
+        for brute in postes.splitlines():
+            if not brute.strip():
+                continue
+            morceaux = [m.strip() for m in brute.split(";")]
+            if len(morceaux) != 3 or not morceaux[0]:
+                raise C.ComptaInvalide(f"Ligne illisible : « {brute.strip()} » (attendu : Libellé ; clé ; montant)")
+            if morceaux[1] not in cles:
+                raise C.ComptaInvalide(f"Clé inconnue « {morceaux[1]} » (clés : {', '.join(cles)})")
+            m = _montant(morceaux[2])
+            if m is None:
+                raise C.ComptaInvalide(f"Montant illisible : « {morceaux[2]} »")
+            lignes.append({"libelle": morceaux[0], "cle": morceaux[1], "montant": m})
+        if not lignes:
+            raise C.ComptaInvalide("Le budget n'a aucun poste")
+        C.enregistrer_budget(A.DOSSIER_DATA, copro, exercice, lignes)
+    except C.ComptaInvalide as e:
+        return retour(cible, f"Budget {exercice} non enregistré : {e}", request)
+    return retour(cible, f"Budget {exercice} enregistré : {euros(sum(l['montant'] for l in lignes))}.", request)
+
+
+@routeur.post("/{copro}/comptes/operations")
+def comptes_operation(request: Request, copro: str, libelle: str = Form(...), cle: str = Form(...),
+                      montant: str = Form(...), vote_le: date = Form(...), a_recevoir: str = Form(""),
+                      retour_exercice: int = Form(...)):
+    exiger(request, copro)
+    cible = f"/app/{copro}/comptes/annexes?exercice={retour_exercice}#travaux"
+    C = A.compta
+    try:
+        if cle not in A.fiche_de(copro)["cles_repartition"]:
+            raise C.ComptaInvalide("Clé de répartition inconnue")
+        o = C.voter_operation(A.DOSSIER_DATA, copro, libelle, cle, _montant(montant) or 0, vote_le,
+                              a_recevoir=_montant(a_recevoir) or 0)
+    except C.ComptaInvalide as e:
+        return retour(cible, f"Opération non enregistrée : {e}", request)
+    return retour(cible, f"{o['libelle']} enregistré ({euros(o['montant_vote'])}). Rattachez-y ses factures.", request)
+
+
+@routeur.post("/{copro}/comptes/operations/{op_id}/cloture")
+def comptes_operation_cloture(request: Request, copro: str, op_id: str, jour: date = Form(..., alias="date"),
+                              retour_exercice: int = Form(...)):
+    exiger(request, copro)
+    cible = f"/app/{copro}/comptes/annexes?exercice={retour_exercice}#travaux"
+    try:
+        o = A.compta.cloturer_operation(A.DOSSIER_DATA, copro, op_id, jour)
+    except A.compta.ComptaInvalide as e:
+        return retour(cible, str(e), request)
+    return retour(cible, f"{o['libelle']} : clôturé le {jour:%d/%m/%Y}.", request)
