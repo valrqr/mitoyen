@@ -120,6 +120,8 @@ footer p + p { margin-top: 8px; }
 .liste-texte { padding-left: 20px; margin: 12px 0 0; }
 .liste-texte li + li { margin-top: 10px; }
 .liste-texte strong { color: var(--encre); }
+.modele { margin-top: 20px; padding: 28px 32px; background: var(--papier); border: 1px solid var(--filet); border-left: 4px solid var(--encre); border-radius: 4px; color: var(--encre); font-size: 16px; }
+.modele p + p { margin-top: 12px; }
 @media (max-width: 809px) {
   .article h1 { font-size: 36px; }
   .article h2 { font-size: 26px; }
