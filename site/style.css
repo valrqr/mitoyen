@@ -213,7 +213,6 @@ footer p + p { margin-top: 8px; }
 .actions li + li { border-top: 1px solid #EBEBEA; }
 .actions svg { width: 22px; height: 22px; flex: none; fill: none; stroke: var(--encre); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 
-.modules { padding-top: 0; }
 .grille-modules { list-style: none; margin: 36px 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--filet); border: 1px solid var(--filet); border-radius: 10px; overflow: hidden; }
 .grille-modules li { display: flex; gap: 14px; align-items: flex-start; padding: 24px; background: var(--papier); }
 .grille-modules svg { width: 26px; height: 26px; stroke-width: 1.8; margin-top: 2px; }
