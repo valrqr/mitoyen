@@ -739,7 +739,22 @@ def reglement_page(request: Request, copro: str):
     textes = {k: A.reglement.en_texte(v) for k, v in (r or {}).get("themes", {}).items()}
     return page(request, "reglement.html", copro, onglet="documents", r=r, themes=A.reglement.THEMES, textes=textes,
                 ia=bool(os.getenv("MISTRAL_API_KEY")), si_non_respect=A.reglement.SI_NON_RESPECT,
-                points=(r or {}).get("points_a_verifier", []))
+                points=(r or {}).get("points_a_verifier", []), lien=A.lien_reglement(copro),
+                partage=A.reglement.reglages(A.DOSSIER_DATA, copro))
+
+
+@routeur.post("/{copro}/reglement/partage")
+def reglement_partage(request: Request, copro: str, action: str = Form(...), integral: str = Form("")):
+    exiger(request, copro)
+    try:
+        A.reglement.partager(A.DOSSIER_DATA, copro, action != "couper", renouveler=action == "renouveler",
+                             integral=integral == "1" if action != "couper" else None)
+    except A.reglement.ReglementInvalide as e:
+        return retour(f"/app/{copro}/reglement#partage", str(e), request)
+    msg = {"couper": "Partage coupé : l'ancien lien ne fonctionne plus.",
+           "renouveler": "Nouveau lien créé : l'ancien ne fonctionne plus.",
+           "reglages": "Réglages du partage enregistrés."}.get(action, "Lien de consultation créé.")
+    return retour(f"/app/{copro}/reglement#partage", msg, request)
 
 
 @routeur.post("/{copro}/reglement/import")

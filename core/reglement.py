@@ -15,7 +15,10 @@ bruit, travaux, location…), dont chaque règle renvoie à l'article d'origine 
 La version en clair ne remplace pas le règlement : en cas de doute, c'est le texte du
 règlement qui fait foi. Pas un conseil juridique.
 
-Stockage : data/<copro>/reglement/ (le PDF d'origine, reglement.json).
+Stockage : data/<copro>/reglement/ (le PDF d'origine, reglement.json, partage.json).
+
+Le syndic peut partager le tout par un lien (désactivé par défaut, renouvelable) : la version en
+clair validée et, s'il le choisit, le texte intégral.
 """
 
 from __future__ import annotations
@@ -23,8 +26,9 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import secrets
 import unicodedata
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
 import resume_ia
@@ -315,3 +319,53 @@ def generer_pdf(fiche: dict, r: dict, chemin: Path, themes: tuple[str, ...] | No
                       bottomMargin=18 * mm, title="Règlement en clair").build(
         h, canvasmaker=CanevasNumerote, onFirstPage=tampon(False, pied), onLaterPages=tampon(False, pied))
     return chemin
+
+
+# --------------------------------------------------------------------------- #
+# 5. Le lien de consultation pour les copropriétaires (désactivé par défaut)
+# --------------------------------------------------------------------------- #
+def _partage(racine: Path, copro: str) -> Path:
+    return dossier(racine, copro) / "partage.json"
+
+
+def reglages(racine: Path, copro: str) -> dict:
+    f = _partage(racine, copro)
+    r = json.loads(f.read_text(encoding="utf-8")) if f.is_file() else {}
+    return {"jeton": None, "actif": False, "integral": False, **r}
+
+
+def partager(racine: Path, copro: str, actif: bool, renouveler: bool = False, integral: bool | None = None) -> dict:
+    """Crée, renouvelle ou coupe le lien. integral : joindre aussi le texte intégral (PDF d'origine)."""
+    p = reglages(racine, copro)
+    if integral is not None:
+        p["integral"] = bool(integral)
+    r = charger(racine, copro)
+    if actif and not (r and (r.get("valide_le") or p["integral"])):
+        raise ReglementInvalide("Rien à partager : validez d'abord la version en clair, ou joignez le texte intégral")
+    if actif and (renouveler or not p.get("jeton")):
+        p["jeton"] = secrets.token_urlsafe(16)
+    p["actif"] = bool(actif)
+    p["modifie_le"] = datetime.now().replace(microsecond=0).isoformat()
+    f = _partage(racine, copro)
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(json.dumps(p), encoding="utf-8")
+    return p
+
+
+def jeton_valide(racine: Path, copro: str, propose: str) -> bool:
+    p = reglages(racine, copro)
+    return bool(p.get("actif") and p.get("jeton")) and secrets.compare_digest(p["jeton"], propose or "")
+
+
+def texte_integral(racine: Path, copro: str) -> Path | None:
+    """Le PDF d'origine, réenregistré sans ses propriétés (auteur, logiciel) ; None s'il n'est pas partagé."""
+    if not reglages(racine, copro)["integral"]:
+        return None
+    d = dossier(racine, copro)
+    source, public = d / "reglement.pdf", d / "reglement_public.pdf"
+    if not source.is_file():
+        return None
+    if not public.is_file() or public.stat().st_mtime < source.stat().st_mtime:
+        from pieces import nettoyer
+        public.write_bytes(nettoyer(source.read_bytes(), "pdf")[0])
+    return public

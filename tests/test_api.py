@@ -1777,3 +1777,57 @@ def test_interface_comptes_consultables():
                 f.unlink(missing_ok=True)
             else:
                 f.write_bytes(contenu)
+
+
+def test_reglement_consultable_par_lien():
+    """Le syndic partage le règlement par un lien : version en clair validée, texte intégral sur option."""
+    import shutil
+    from pypdf import PdfReader
+    from moteur.api import DOSSIER_DATA
+    dossier = DOSSIER_DATA / "tilleuls" / "reglement"
+    shutil.rmtree(dossier, ignore_errors=True)
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    try:
+        # Rien d'importé : pas de lien possible
+        r = n.post("/app/tilleuls/reglement/partage", data={"action": "activer"})
+        assert "Rien à partager" in r.text and reglement.reglages(DOSSIER_DATA, "tilleuls")["jeton"] is None
+        r = reglement.importer(DOSSIER_DATA, "tilleuls", REGLEMENT_PDF)
+        # Importé mais non validé, sans texte intégral : toujours rien à partager
+        assert "Rien à partager" in n.post("/app/tilleuls/reglement/partage", data={"action": "activer"}).text
+        # Texte intégral seul
+        n.post("/app/tilleuls/reglement/partage", data={"action": "activer", "integral": "1"})
+        p = reglement.reglages(DOSSIER_DATA, "tilleuls")
+        base = f"/reglement/tilleuls/{p['jeton']}"
+        page = c.get(base)
+        assert page.status_code == 200 and page.headers["x-robots-tag"] == "noindex"
+        assert "Texte intégral" in page.text and "en cours de relecture" in page.text
+        assert c.get(base + "/en-clair.pdf").status_code == 404
+        integral = c.get(base + "/texte-integral.pdf")
+        lu = PdfReader(io.BytesIO(integral.content))
+        assert integral.status_code == 200 and len(lu.pages) == len(PdfReader(io.BytesIO(REGLEMENT_PDF)).pages)
+        assert not (lu.metadata or {}).get("/Author") and not (lu.metadata or {}).get("/Creator")
+        # Version validée : la page la montre par thèmes, avec ses PDF
+        r["themes"] = {"animaux": [{"regle": "Les chiens sont tenus en laisse dans les parties communes.",
+                                    "articles": ["12"], "citation": ""}]}
+        reglement.valider(DOSSIER_DATA, "tilleuls", r)
+        page = c.get(base).text
+        assert "Les chiens sont tenus en laisse" in page and "art.&nbsp;12" in page and "fait foi" in page
+        assert "Si une règle n'est pas respectée" in page
+        for q in ("", "?grand=true", "?usage=true"):
+            pdf = c.get(base + "/en-clair.pdf" + q)
+            assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+        # Le syndic retire le texte intégral
+        n.post("/app/tilleuls/reglement/partage", data={"action": "reglages"})
+        assert "Texte intégral" not in c.get(base).text and c.get(base + "/texte-integral.pdf").status_code == 404
+        # Le lien apparaît dans l'interface ; renouvelé, l'ancien ne marche plus
+        assert base in n.get("/app/tilleuls/reglement").text
+        n.post("/app/tilleuls/reglement/partage", data={"action": "renouveler"})
+        assert c.get(base).status_code == 404
+        nouveau = f"/reglement/tilleuls/{reglement.reglages(DOSSIER_DATA, 'tilleuls')['jeton']}"
+        assert c.get(nouveau).status_code == 200
+        n.post("/app/tilleuls/reglement/partage", data={"action": "couper"})
+        assert c.get(nouveau).status_code == 404 and c.get(nouveau + "/en-clair.pdf").status_code == 404
+        assert c.get("/reglement/tilleuls/" + "x" * 22).status_code == 404
+    finally:
+        shutil.rmtree(dossier, ignore_errors=True)

@@ -319,3 +319,12 @@ form.en-ligne { display: inline; margin-left: .6rem; }
   .depenses-public .d-nature { grid-column: 1; color: var(--gris); font-size: .85rem; }
   .depenses-public .d-piece { grid-column: 1 / -1; }
 }
+
+/* Règlement partagé aux copropriétaires */
+.documents-public { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.8rem; }
+.sommaire-public { display: flex; flex-wrap: wrap; gap: .35rem .9rem; margin: 0 0 1.6rem; padding: .8rem 0; border-top: 1px solid var(--filet); border-bottom: 1px solid var(--filet); font-size: .95rem; }
+.theme-public { margin: 0 0 1.6rem; scroll-margin-top: 1rem; }
+.theme-public h2 { margin: 0 0 .5rem; }
+.theme-public ul { margin: 0; padding-left: 1.2rem; }
+.theme-public li { margin: 0 0 .45rem; line-height: 1.5; }
+@media (max-width: 600px) { .documents-public .bouton { flex: 1 1 100%; text-align: center; } }

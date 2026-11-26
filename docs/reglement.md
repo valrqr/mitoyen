@@ -22,6 +22,14 @@ Le PDF « Le règlement en clair » se termine par un rappel commun à toutes le
 
 La version en clair **ne remplace pas le règlement** : en cas de doute, c'est le texte du règlement qui fait foi. Elle ne dit pas non plus si une clause est valable. Pas un conseil juridique : l'ADIL répond gratuitement.
 
+## Le partager avec les copropriétaires
+
+Depuis la page du règlement, le syndic crée un **lien de consultation**, à mettre dans un mail, une convocation ou l'affiche du hall. La page montre la version en clair par thèmes, avec trois PDF : la version complète, la version en grands caractères et les extraits pour un locataire.
+
+- **Le texte intégral** s'ajoute sur option : le syndic vérifie d'abord qu'il ne contient ni code d'accès ni coordonnées personnelles. Le PDF est réenregistré sans ses propriétés (auteur, logiciel).
+- Tant que la version en clair n'est pas validée, seul le texte intégral peut être partagé.
+- Le lien est désactivé par défaut, n'est pas indexé par les moteurs de recherche, et se coupe ou se renouvelle à tout moment : l'ancien lien cesse alors de fonctionner.
+
 ## Essayer
 
 La démonstration contient un règlement fictif (`exemples/reglement/reglement_mimosas.pdf`, 16 articles) et sa version en clair validée : `/app/mimosas/reglement`.

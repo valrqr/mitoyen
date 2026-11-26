@@ -1502,6 +1502,59 @@ def piece_publique(copro: str = Copro, jeton: str = Jeton, cle: str = PathParam(
                                                          "Content-Disposition": "inline"})
 
 
+def lien_reglement(copro: str) -> str | None:
+    p = reglement.reglages(DOSSIER_DATA, copro)
+    return f"{URL_PUBLIQUE}/reglement/{copro}/{p['jeton']}" if p.get("actif") and p.get("jeton") else None
+
+
+def _lien_invalide_reglement() -> HTMLResponse:
+    return HTMLResponse(page_signalement._page(
+        "Lien invalide", "", "<h1>Lien invalide</h1><p class=\"erreur\">Le règlement n’est plus partagé, ou le "
+        "lien a été renouvelé. Demandez le lien à jour au syndic.</p>"), status_code=404)
+
+
+PUBLIC = {"Cache-Control": "no-store", "X-Robots-Tag": "noindex"}
+
+
+@app.get("/reglement/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
+def page_reglement_public(request: Request, copro: str = Copro, jeton: str = Jeton):
+    """Le règlement de copropriété en clair, et s'il est partagé le texte intégral."""
+    from . import interface
+    if copro not in lister_copros() or not reglement.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return _lien_invalide_reglement()
+    fiche = fiche_de(copro)
+    r = reglement.valide(DOSSIER_DATA, copro)
+    return interface.templates.TemplateResponse(request, "reglement_public.html", {
+        "r": r, "themes": reglement.THEMES, "si_non_respect": reglement.SI_NON_RESPECT,
+        "avertissement": reglement.AVERTISSEMENT, "copropriete": fiche["copropriete"]["nom"],
+        "integral": reglement.texte_integral(DOSSIER_DATA, copro) is not None,
+        "base": f"/reglement/{copro}/{jeton}"}, headers=PUBLIC)
+
+
+@app.get("/reglement/{copro}/{jeton}/en-clair.pdf", include_in_schema=False)
+def reglement_public_pdf(copro: str = Copro, jeton: str = Jeton, grand: bool = False, usage: bool = False):
+    if copro not in lister_copros() or not reglement.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return _lien_invalide_reglement()
+    r = reglement.valide(DOSSIER_DATA, copro)
+    if not r:
+        raise HTTPException(404, "La version en clair n'est pas encore validée par le syndic")
+    nom = "reglement_en_clair" + ("_usage" if usage else "") + ("_grand" if grand else "") + ".pdf"
+    chemin = reglement.generer_pdf(fiche_de(copro), r, DOSSIER_SORTIE / copro / "reglement" / nom,
+                                   reglement.USAGE_LOCATAIRE if usage else None, grand=grand)
+    return FileResponse(chemin, media_type="application/pdf", filename=nom, headers=PUBLIC)
+
+
+@app.get("/reglement/{copro}/{jeton}/texte-integral.pdf", include_in_schema=False)
+def reglement_public_integral(copro: str = Copro, jeton: str = Jeton):
+    if copro not in lister_copros() or not reglement.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return _lien_invalide_reglement()
+    f = reglement.texte_integral(DOSSIER_DATA, copro)
+    if f is None:
+        raise HTTPException(404, "Le texte intégral n'est pas partagé : demandez-le au syndic")
+    return FileResponse(f, media_type="application/pdf", filename="reglement_de_copropriete.pdf",
+                        headers={**PUBLIC, "Content-Disposition": "inline; filename=reglement_de_copropriete.pdf"})
+
+
 def lien_consultation(copro: str, cid: str, jeton: str) -> str:
     return f"{URL_PUBLIQUE}/consulter/{copro}/{cid}/{jeton}"
 

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Le règlement · {{ copropriete }}</title>
+  <link rel="icon" type="image/png" href="/statique/icone_64.png">
+  <link rel="stylesheet" href="/statique/app.css">
+</head>
+<body class="public">
+<main class="public-page reglement-public">
+  <p class="public-marque"><img src="/statique/icone_64.png" alt="" width="28" height="28"> Mitoyen</p>
+  <h1>Le règlement de copropriété</h1>
+  <p class="chapeau">{{ copropriete }}. Le règlement s'applique à tous les occupants, propriétaires comme locataires.
+    {% if r %}Voici l'essentiel en langage courant, rangé par thèmes ; chaque règle renvoie à l'article d'où elle vient.{% endif %}</p>
+
+  <div class="documents-public">
+    {% if r %}
+    <a class="bouton" href="{{ base }}/en-clair.pdf" target="_blank" rel="noopener">Version en clair (PDF)</a>
+    <a class="bouton secondaire" href="{{ base }}/en-clair.pdf?grand=true" target="_blank" rel="noopener">En grands caractères</a>
+    <a class="bouton secondaire" href="{{ base }}/en-clair.pdf?usage=true" target="_blank" rel="noopener">Extraits pour un locataire</a>
+    {% endif %}
+    {% if integral %}<a class="bouton{{ ' secondaire' if r }}" href="{{ base }}/texte-integral.pdf" target="_blank" rel="noopener">Texte intégral (PDF)</a>{% endif %}
+  </div>
+
+  {% if r %}
+  <nav class="sommaire-public" aria-label="Thèmes">
+    {% for cle, titre in themes.items() if r.themes.get(cle) %}<a href="#{{ cle }}">{{ titre }}</a>{% endfor %}
+  </nav>
+
+  {% for cle, titre in themes.items() if r.themes.get(cle) %}
+  <section id="{{ cle }}" class="theme-public">
+    <h2>{{ titre }}</h2>
+    <ul>
+      {% for x in r.themes[cle] %}<li>{{ x.regle }} <span class="discret">(art.&nbsp;{{ x.articles|join(", ") }})</span></li>{% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+
+  <section class="theme-public">
+    <h2>Si une règle n'est pas respectée</h2>
+    <ul>{% for t, txt in si_non_respect %}<li><strong>{{ t }}.</strong> {{ txt }}</li>{% endfor %}</ul>
+  </section>
+
+  <p class="discret">{{ avertissement }} Version relue par le syndic le {{ r.valide_le|date_fr }}.</p>
+  {% else %}
+  <div class="vide">La version en clair est en cours de relecture par le syndic. Le texte intégral fait foi.</div>
+  {% endif %}
+
+  <p class="discret">Une question sur une règle ? Posez-la au syndic. Établi avec <a href="https://mitoyen.app">Mitoyen</a>, l'outil open source des syndics bénévoles.</p>
+</main>
+</body>
+</html>

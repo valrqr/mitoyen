@@ -58,6 +58,22 @@
   </div>
   {% if ia %}<form method="post" action="/app/{{ copro }}/reglement/redaction" style="margin-top:1rem"><button class="secondaire" type="submit">Refaire la rédaction</button></form>{% endif %}
   {% endif %}
+  <h3 id="partage">Partager avec les copropriétaires</h3>
+  <p class="discret" style="margin-top:0">Un lien à mettre dans un mail, une convocation ou l'affiche du hall : la version en clair validée, en PDF et en grands caractères, et si vous le choisissez le texte intégral. Le lien n'est pas indexé par les moteurs de recherche ; vous pouvez le couper ou le renouveler à tout moment.</p>
+  {% if lien %}<p class="lien-public"><a href="{{ lien }}" target="_blank" rel="noopener">{{ lien }}</a></p>{% endif %}
+  <form method="post" action="/app/{{ copro }}/reglement/partage" style="display:grid;gap:.5rem">
+    <label style="display:flex;gap:.5rem;align-items:flex-start"><input type="checkbox" name="integral" value="1"{% if partage.integral %} checked{% endif %}>
+      <span>Joindre le texte intégral <span class="discret">(vérifiez qu'il ne contient ni code d'accès ni coordonnées personnelles ; ses propriétés de fichier sont retirées)</span></span></label>
+    {% if lien %}
+    <button type="submit" name="action" value="reglages" class="secondaire">Enregistrer</button>
+    <button type="submit" name="action" value="renouveler" class="secondaire">Renouveler le lien</button>
+    <button type="submit" name="action" value="couper" class="secondaire">Couper le partage</button>
+    {% else %}
+    <button type="submit" name="action" value="activer"{% if not r.valide_le %} class="secondaire"{% endif %}>Créer le lien de consultation</button>
+    {% if not r.valide_le %}<p class="discret" style="margin:0">Sans version en clair validée, seul le texte intégral peut être partagé.</p>{% endif %}
+    {% endif %}
+  </form>
+
   <details class="formulaire" style="margin-top:1rem"><summary>Les {{ r.articles|length }} articles</summary>
     <ol style="padding-left:1.1rem;margin:.6rem 0 0">{% for a in r.articles %}<li value="{{ a.num if a.num.isdigit() else loop.index }}">{{ a.titre or a.texte[:60] }}</li>{% endfor %}</ol>
   </details>
