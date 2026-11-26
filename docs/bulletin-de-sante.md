@@ -10,6 +10,7 @@ Une page de faits sur la gestion de l'immeuble, chacun rapproché de son repère
 | Fonds de travaux | Cotisation d'au moins 5 % du budget (art. 14-2-1) | Compte 105 de la comptabilité, sinon la fiche |
 | Charges impayées | Seuil d'alerte légal : 25 % des sommes exigibles (art. 29-1 A) | Comptes des copropriétaires, **en tranches** |
 | Budget tenu | Écart entre le réalisé et le budget voté | Dernier exercice clos tenu dans Mitoyen |
+| Évolution du budget | Au-delà de 5 % de hausse par an en moyenne, regarder les postes qui augmentent le plus | Budgets prévisionnels enregistrés (au moins deux exercices) |
 | Contrats et obligations | Assurance responsabilité civile (art. 9-1), aucune échéance dépassée | Contrats et échéancier légal de la fiche |
 | Plan pluriannuel de travaux | Obligatoire pour les immeubles de plus de 15 ans (art. 14-2) | Section `plan_travaux` de la fiche |
 | Assemblée générale | Au moins une par an | AG tenues avec Mitoyen, sinon celle qui a approuvé les comptes |

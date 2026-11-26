@@ -362,6 +362,22 @@ def ag_page(request: Request, copro: str):
                 odj=A.odj_type(copro)["resolutions"], date_conseillee=(jour + timedelta(days=45)).isoformat())
 
 
+def question_saisie(ligne: str) -> dict:
+    """« Remplacement de la porte du hall ; 4 800 € ; 2 appels » → titre, montant, échéances.
+    Le montant et le nombre d'appels sont facultatifs."""
+    morceaux = [m.strip() for m in ligne.split(";")]
+    q = {"titre": morceaux[0][:200]}
+    for m in morceaux[1:]:
+        n = re.fullmatch(r"(?:en\s+)?(\d{1,2})\s*appels?", m, re.I)
+        if n:
+            q["echeances"] = int(n.group(1))
+        elif m:
+            montant = A.quote_part.lire_montant(m)         # MontantInvalide si illisible
+            if montant is not None:
+                q["montant"] = montant
+    return q
+
+
 @routeur.post("/{copro}/ag")
 def ag_creer(request: Request, copro: str, date_ag: date = Form(...), heure: str = Form(...), lieu: str = Form(...),
              titre: str = Form("Assemblée générale ordinaire"), visio: str = Form(""), odj_type: bool = Form(False),
@@ -369,10 +385,11 @@ def ag_creer(request: Request, copro: str, date_ag: date = Form(...), heure: str
     exiger(request, copro)
     resolutions = []
     if odj_type:
-        resolutions += [A.ResolutionAG(**{k: r[k] for k in ("titre", "majorite") if k in r}, texte=r.get("texte", ""))
+        resolutions += [A.ResolutionAG(**{k: r[k] for k in ("titre", "majorite", "cout") if k in r},
+                                       texte=r.get("texte", ""))
                         for r in A.odj_type(copro)["resolutions"]]
-    resolutions += [A.ResolutionAG(titre=l.strip()[:200]) for l in autres.splitlines() if len(l.strip()) >= 3]
     try:
+        resolutions += [A.ResolutionAG(**question_saisie(l)) for l in autres.splitlines() if len(l.strip()) >= 3]
         corps = A.NouvelleAG(date=date_ag, heure=heure, lieu=lieu, titre=titre, visio=visio or None,
                              resolutions=resolutions)
         a = A.creer_ag(corps, copro)
@@ -392,7 +409,12 @@ def ag_detail(request: Request, copro: str, ag_id: str):
     a = A.ag_de(copro, ag_id)
     cal = A.assemblee.calendrier(fiche, a, jour)
     rap = A.rappel_ag.rappels(fiche, a, copro, jour)
-    return page(request, "ag_detail.html", copro, onglet="ag", a=a, cal=cal, rappel=rap,
+    couts = {}
+    for r in a["resolutions"]:
+        c = A.quote_part.cout(fiche, r)
+        if c:
+            couts[r["num"]] = {"total": sum((m for m, _ in c["composantes"]), Decimal(0)), **c}
+    return page(request, "ag_detail.html", copro, onglet="ag", a=a, cal=cal, rappel=rap, couts=couts,
                 coproprietaires=sorted(fiche["coproprietaires"], key=lambda c: c["nom"]))
 
 
@@ -1034,6 +1056,7 @@ def comptes_annexes(request: Request, copro: str, exercice: int | None = None):
     st = A.compta.charger(A.DOSSIER_DATA, copro)
     return page(request, "annexes.html", copro, onglet="comptes", r=res, N=N, montant=A.annexes.montant,
                 saisie=saisie, connus={k: k in budgets for k in (N, N + 1, N + 2)},
+                evolution=A.evolution_budget.evolution(fiche, budgets),
                 cles=fiche["cles_repartition"], operations=st["operations_votees"])
 
 

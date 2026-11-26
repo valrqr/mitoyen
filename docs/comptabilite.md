@@ -73,6 +73,24 @@ exercice non clos, état financier déséquilibré), le PDF porte la mention PRO
 ⚠️ Mise en forme indicative, à comparer avec les modèles de l'arrêté du 14 mars 2005 (Légifrance).
 Pas un conseil comptable ; l'ADIL renseigne gratuitement.
 
+## L'évolution du budget
+
+Les données publiques du registre des copropriétés ne contiennent aucun montant : impossible de comparer une
+copropriété à ses voisines sans leurs propres chiffres. Mitoyen la compare donc à elle-même, d'un exercice à
+l'autre, à partir des budgets prévisionnels enregistrés (écran des annexes, rubrique « Évolution du budget ») :
+
+- le budget total et par lot principal, son évolution sur la période et en moyenne par an ;
+- chaque poste, exercice par exercice, avec son évolution et sa part dans le dernier budget ;
+- les postes **à regarder** : plus de 5 % de hausse par an en moyenne et au moins 3 % du budget ;
+- les postes nouveaux ou supprimés.
+
+Les postes sont rapprochés par leur libellé (sans accents, ni casse, ni ponctuation) : gardez les mêmes libellés
+d'une année sur l'autre. Le bulletin de santé en reprend une ligne. Ce n'est jamais un jugement : une hausse
+peut avoir une bonne raison.
+
+Plus tard, avec l'accord de chaque copropriété, un repère anonyme entre copropriétés Mitoyen comparables
+(une médiane n'est affichée qu'à partir de 5 copropriétés comparables).
+
 ## Étapes
 
 | Étape | Contenu | État |

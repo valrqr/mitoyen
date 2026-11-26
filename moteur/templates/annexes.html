@@ -84,6 +84,34 @@
 </details>
 {% endfor %}
 
+<h2 id="evolution">Évolution du budget</h2>
+{% set ev = evolution %}
+{% if not ev.disponible %}
+<p class="discret">{{ ev.message }}</p>
+{% else %}
+<p>De {{ ev.premier }} à {{ ev.dernier }}, le budget passe de <strong>{{ ev.totaux[0].total|euros }}</strong> à <strong>{{ ev.totaux[-1].total|euros }}</strong> ({{ ("%+.1f"|format(ev.variation))|replace(".", ",") }} %{% if ev.annees > 1 %}, soit {{ ("%+.1f"|format(ev.taux_annuel))|replace(".", ",") }} % par an en moyenne{% endif %}). Par lot principal ({{ ev.lots_principaux }}) : {{ ev.totaux[0].par_lot|euros }} puis {{ ev.totaux[-1].par_lot|euros }}.</p>
+{% if ev.a_regarder %}
+<p class="evolution-alerte">À regarder : {% for l in ev.a_regarder %}<strong>{{ l.libelle|lower }}</strong> ({{ "%+.0f"|format(l.taux_annuel) }} % par an){{ ", " if not loop.last else "." }}{% endfor %} Ces postes augmentent vite et pèsent dans le budget : une question à poser au prestataire, ou une remise en concurrence à envisager.</p>
+{% endif %}
+<div class="defile">
+<table class="table annexe-table evolution">
+  <thead><tr><th>Poste</th>{% for n in ev.exercices %}<th class="nombre">{{ n }}</th>{% endfor %}<th class="nombre">Évolution</th><th class="nombre">Part du budget {{ ev.dernier }}</th></tr></thead>
+  <tbody>
+    {% for l in ev.postes %}
+    <tr{% if l.a_regarder %} class="a-regarder"{% endif %}>
+      <td>{{ l.libelle }}{% if l.statut == "nouveau" %} <span class="discret">(nouveau)</span>{% elif l.statut == "disparu" %} <span class="discret">(supprimé)</span>{% endif %}</td>
+      {% for m in l.montants %}<td class="nombre">{{ m|euros if m is not none else "—" }}</td>{% endfor %}
+      <td class="nombre">{% if l.variation is not none %}{{ "%+.0f"|format(l.variation) }} %{% else %}—{% endif %}</td>
+      <td class="nombre">{{ "%.0f"|format(l.part) }} %</td>
+    </tr>
+    {% endfor %}
+    <tr class="a-total"><td>Total</td>{% for t in ev.totaux %}<td class="nombre">{{ t.total|euros }}</td>{% endfor %}<td class="nombre">{{ "%+.0f"|format(ev.variation) }} %</td><td class="nombre">100 %</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="discret">Repère : {{ ev.repere }}. Une hausse peut avoir une bonne raison (nouveau contrat, entretien renforcé) : c'est une question à se poser, pas un jugement.</p>
+{% endif %}
+
 <h2 id="travaux">Travaux votés hors budget</h2>
 <p>Travaux de l'article 14-2 et opérations exceptionnelles votés en AG. Rattachez-y leurs factures dans la <a href="/app/{{ copro }}/comptes#factures">saisie des factures</a> : ils alimentent les annexes 4 et 5.</p>
 {% if operations %}

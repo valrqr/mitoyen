@@ -124,6 +124,7 @@ import consultation  # noqa: E402
 import rappel_ag  # noqa: E402
 import quote_part  # noqa: E402
 import ag_bref  # noqa: E402
+import evolution_budget  # noqa: E402
 import reglement  # noqa: E402
 import meubles_tourisme  # noqa: E402
 import nouvel_arrivant  # noqa: E402

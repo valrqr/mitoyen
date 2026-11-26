@@ -270,3 +270,8 @@ details.aux ul { margin: .3rem 0 0; padding-left: 1.1rem; font-size: .9rem; }
 .etat-rejetee, .etat-caduque { background: #FFF4ED; border-left: 3px solid var(--orange); }
 .liens-perso code { word-break: break-all; }
 button.lien { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+
+/* Évolution du budget */
+.evolution tr.a-regarder td { background: #FFF4ED; }
+.evolution tr.a-regarder td:first-child { box-shadow: inset 3px 0 0 #C2410C; font-weight: 600; }
+.evolution-alerte { padding: .7rem 1rem; border-left: 4px solid #C2410C; background: #FFF4ED; }

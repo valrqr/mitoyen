@@ -143,6 +143,13 @@ def indicateurs(fiche: dict, jour: date, *, E: list | None = None, st: dict | No
         res.append({"theme": "Budget tenu", "valeur": "pas encore d'exercice clos dans Mitoyen", "detail": "",
                     "repere": "écart entre le réalisé et le budget voté", "etat": INCONNU})
 
+    # 4 bis. Évolution du budget d'un exercice à l'autre
+    import evolution_budget
+    connus = budgets or {}
+    if not connus and fiche.get("budget_previsionnel", {}).get("exercice"):
+        connus = {int(fiche["budget_previsionnel"]["exercice"]): fiche["budget_previsionnel"].get("postes", [])}
+    res.append(evolution_budget.indicateur(fiche, connus))
+
     # 5. Contrats, assurance et diagnostics
     alertes = echeances(fiche, jour, suivi_plan=suivi_plan)
     depasses = [a for a in alertes if a.get("niveau") == "depasse"]
