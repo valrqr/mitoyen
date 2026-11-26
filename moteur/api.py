@@ -125,6 +125,9 @@ import rappel_ag  # noqa: E402
 import quote_part  # noqa: E402
 import ag_bref  # noqa: E402
 import evolution_budget  # noqa: E402
+import fiche_edition  # noqa: E402
+import fiche_copro  # noqa: E402
+import pieces  # noqa: E402
 import reglement  # noqa: E402
 import meubles_tourisme  # noqa: E402
 import nouvel_arrivant  # noqa: E402
@@ -175,6 +178,16 @@ def verifier_cle(request: Request, x_api_key: str | None = Security(cle_api)) ->
 
 
 def fiche_de(copro: str) -> dict:
+    """La fiche à jour : le YAML de config/, plus les modifications faites dans l'interface
+    (journal dans data/<copro>/fiche_modifications.json)."""
+    chemin = DOSSIER_CONFIG / f"{copro}.yaml"
+    if not chemin.is_file():
+        raise HTTPException(404, f"Aucune fiche pour la copro « {copro} »")
+    return fiche_edition.fiche_a_jour(charger_fiche(chemin), DOSSIER_DATA, copro)
+
+
+def fiche_de_base(copro: str) -> dict:
+    """Le YAML seul, sans les modifications de l'interface."""
     chemin = DOSSIER_CONFIG / f"{copro}.yaml"
     if not chemin.is_file():
         raise HTTPException(404, f"Aucune fiche pour la copro « {copro} »")
@@ -1441,6 +1454,52 @@ def page_bulletin_public(request: Request, copro: str = Copro, jeton: str = Jeto
     b = bulletin.depuis_mitoyen(fiche_de(copro), DOSSIER_SORTIE, DOSSIER_DATA, copro, date.today())
     return interface.templates.TemplateResponse(request, "bulletin_public.html", {"b": b},
                                                 headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
+
+
+def lien_comptes(copro: str) -> str | None:
+    r = pieces.reglages(DOSSIER_DATA, copro)
+    return f"{URL_PUBLIQUE}/comptes/{copro}/{r['jeton']}" if r.get("actif") and r.get("jeton") else None
+
+
+def comptes_consultables(fiche: dict, copro: str, exercice: int | None, jour: date) -> dict:
+    """Les charges d'un exercice avec leurs pièces, et la liste des exercices consultables."""
+    E, st, _ = etat_date.journal_et_budgets(fiche, DOSSIER_SORTIE, DOSSIER_DATA, copro)
+    courant = jour.year if annexes.periode(fiche, jour.year)[0] <= jour.isoformat() else jour.year - 1
+    annees = sorted({int(e["date"][:4]) for e in E} | {courant}, reverse=True)
+    n = exercice if exercice in annees else courant
+    du, au = annexes.periode(fiche, n)
+    res = pieces.charges(E, st, pieces.charger(DOSSIER_DATA, copro), du, min(au, jour.isoformat()))
+    return {**res, "exercice": n, "exercices": annees, "copropriete": fiche["copropriete"]["nom"],
+            "en_cours": au >= jour.isoformat()}
+
+
+def _lien_invalide_comptes() -> HTMLResponse:
+    return HTMLResponse(page_signalement._page(
+        "Lien invalide", "", "<h1>Lien invalide</h1><p class=\"erreur\">Les comptes ne sont plus partagés, ou le "
+        "lien a été renouvelé. Demandez le lien à jour au syndic.</p>"), status_code=404)
+
+
+@app.get("/comptes/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
+def page_comptes_public(request: Request, copro: str = Copro, jeton: str = Jeton, exercice: int | None = None):
+    """Les dépenses de la copropriété et leurs justificatifs, partagés par le syndic aux copropriétaires."""
+    from . import interface
+    if copro not in lister_copros() or not pieces.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return _lien_invalide_comptes()
+    c = comptes_consultables(fiche_de(copro), copro, exercice, date.today())
+    return interface.templates.TemplateResponse(request, "comptes_public.html", {"c": c, "base": f"/comptes/{copro}/{jeton}"},
+                                                headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
+
+
+@app.get("/comptes/{copro}/{jeton}/piece/{cle}", include_in_schema=False)
+def piece_publique(copro: str = Copro, jeton: str = Jeton, cle: str = PathParam(..., max_length=80)):
+    if copro not in lister_copros() or not pieces.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return _lien_invalide_comptes()
+    p = pieces.charger(DOSSIER_DATA, copro).get(cle)
+    f = pieces.fichier(DOSSIER_DATA, copro, cle) if p and not p["privee"] else None
+    if f is None:
+        raise HTTPException(404, "Pièce indisponible : demandez-la au syndic")
+    return FileResponse(f[0], media_type=f[1], headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex",
+                                                         "Content-Disposition": "inline"})
 
 
 def lien_consultation(copro: str, cid: str, jeton: str) -> str:

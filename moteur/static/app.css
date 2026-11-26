@@ -275,3 +275,47 @@ button.lien { background: none; border: 0; padding: 0; color: inherit; text-deco
 .evolution tr.a-regarder td { background: #FFF4ED; }
 .evolution tr.a-regarder td:first-child { box-shadow: inset 3px 0 0 #C2410C; font-weight: 600; }
 .evolution-alerte { padding: .7rem 1rem; border-left: 4px solid #C2410C; background: #FFF4ED; }
+
+/* Fiche d'un copropriétaire, changement de propriétaire */
+.fiche-copro { display: grid; gap: 1.1rem; max-width: 44rem; }
+.fiche-copro fieldset { border: 1px solid var(--filet); border-radius: var(--rayon); padding: .9rem 1rem 1rem; margin: 0; display: grid; gap: .7rem; }
+.fiche-copro legend { font-weight: 600; padding: 0 .3rem; }
+.fiche-copro label { display: block; }
+.fiche-copro label > input:not([type=radio]):not([type=checkbox]), .fiche-copro label > select { display: block; margin-top: .3rem; }
+.historique td:first-child { width: 11rem; white-space: nowrap; color: var(--gris); }
+.fiche-copro input:not([type=radio]):not([type=checkbox]), .fiche-copro select { width: 100%; }
+.choix-ligne { display: flex; flex-wrap: wrap; gap: .5rem 1.4rem; }
+.choix-ligne label { display: flex; align-items: center; gap: .4rem; }
+.deux-colonnes { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .7rem; }
+.lots-proprio + .lots-proprio { border-top: 1px solid var(--filet); padding-top: .6rem; }
+.fiche-copro .si-existant { display: none; }
+.fiche-copro:has(input[name=qui][value=existant]:checked) .si-existant { display: grid; gap: .7rem; }
+.fiche-copro:has(input[name=qui][value=existant]:checked) .si-nouveau { display: none; }
+.si-nouveau { display: grid; gap: .7rem; }
+.etiquette .nom a { color: inherit; text-decoration: none; }
+.etiquette .nom a:hover, .etiquette .nom a:focus-visible { text-decoration: underline; }
+.anciens { padding-left: 1.2rem; }
+
+/* Pièces justificatives et comptes consultables */
+.chiffres-comptes { display: flex; flex-wrap: wrap; gap: 1rem 2.4rem; margin: 1rem 0 1.4rem; }
+.chiffres-comptes div { display: grid; }
+.chiffres-comptes b { font-size: 1.5rem; color: var(--encre); }
+.chiffres-comptes span { color: var(--gris); font-size: .9rem; }
+.pieces tr.sans-piece td:last-child { background: #FAFAF8; }
+.joindre { display: flex; flex-wrap: wrap; gap: .4rem; align-items: center; }
+.joindre input[type=file] { max-width: 14rem; font-size: .85rem; }
+form.en-ligne { display: inline; margin-left: .6rem; }
+.etiquette-privee { font-size: .78rem; border: 1px solid var(--filet); border-radius: 3px; padding: 0 .3rem; margin-left: .3rem; }
+.exercices-public { margin: .4rem 0 1rem; }
+.depenses-public .d-date { white-space: nowrap; }
+@media (max-width: 640px) {
+  .depenses-public thead { display: none; }
+  .depenses-public, .depenses-public tbody, .depenses-public tr, .depenses-public td { display: block; width: 100%; }
+  .depenses-public tr { display: grid; grid-template-columns: 1fr auto; gap: .15rem .8rem; padding: .8rem .2rem; border-bottom: 1px solid var(--filet); }
+  .depenses-public td { padding: 0; border: 0; }
+  .depenses-public .d-date { grid-column: 1; color: var(--gris); font-size: .85rem; }
+  .depenses-public .d-montant { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-weight: 600; }
+  .depenses-public .d-fournisseur { grid-column: 1; }
+  .depenses-public .d-nature { grid-column: 1; color: var(--gris); font-size: .85rem; }
+  .depenses-public .d-piece { grid-column: 1 / -1; }
+}

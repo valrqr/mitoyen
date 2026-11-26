@@ -17,12 +17,32 @@ Le moteur sert aussi une interface web, à l'adresse `/app`. Pas d'application �
 | **Travaux** | Un dossier par chantier : ajouter les devis (montant, validité, PDF), les voir dans leur ordre d'arrivée sans classement ni recommandation, la quote-part de chacun selon chaque devis, qui doit décider et selon quelle majorité, le comparatif à joindre à la convocation |
 | **Plan de travaux** | Le financement des dix ans du plan en un graphique : la part payée par le fonds, la part à appeler en plus. Un simulateur recalcule tout quand on change la cotisation ou la hausse des prix. Pour chaque ligne : ouvrir le dossier de travaux, la reporter, la marquer réalisée |
 | **Signalements** | Le lien de la copropriété et l'affiche du hall avec son QR code ; les signalements des voisins, urgents d'abord, avec description, photo et contact ; l'état et une note visible des voisins à mettre à jour ; le délai de déclaration à l'assurance pour les fuites et les dégradations |
-| **Copropriétaires** | Présentés étage par étage, comme sur le tableau d'interphone du hall : lots, mail ou courrier, grands caractères, aidant, retard éventuel |
+| **Copropriétaires** | Présentés étage par étage, comme sur le tableau d'interphone du hall : lots, mail ou courrier, grands caractères, aidant, retard éventuel. Un clic sur un nom ouvre sa fiche : coordonnées, mail ou courrier (avec la trace de la demande de papier), grands caractères, proche aidant (avec la date de son accord écrit). « Enregistrer un changement de propriétaire » inscrit le nouveau propriétaire après une vente, une succession ou une donation |
 | **Documents** | Affiche du hall, fiche synthétique, plan de travaux, règlement en clair (import, relecture, validation), packs de bienvenue, dossier de vente, déclarations de meublés de tourisme, dossier de transfert vers un autre syndic |
 
 <p align="center"><img src="apercu_interphone.png" alt="Les copropriétaires, comme sur le tableau d'interphone" width="760"></p>
 
 <p align="center"><img src="apercu_plan_interface.png" alt="Le plan de travaux : financement année par année et simulateur de cotisation" width="760"></p>
+
+## Modifier la fiche sans toucher au fichier
+
+La fiche de la copropriété (`config/<copro>.yaml`) reste la base. Ce que le syndic modifie dans l'interface
+(coordonnées d'un copropriétaire, nouveau propriétaire après une vente) est ajouté à un journal,
+`data/<copro>/fiche_modifications.json`, rejoué à chaque lecture de la fiche :
+
+- le fichier de configuration et ses commentaires ne sont jamais réécrits ;
+- chaque modification est datée, avec son motif : c'est la trace du syndic bénévole ;
+- chaque modification est contrôlée sur la fiche complète avant d'être enregistrée (adresse électronique
+  valide, accord écrit pour un proche aidant, un seul vendeur par changement…) ; si la fiche devenait
+  incohérente, rien n'est enregistré et un message dit pourquoi ;
+- un ancien copropriétaire n'est jamais effacé : il garde ses comptes (et une éventuelle dette de vendeur),
+  mais ne reçoit plus les envois de la copropriété ;
+- le parcours de vente (Documents → Dossier de vente) mène directement au changement de propriétaire,
+  lots et date de l'acte déjà remplis.
+
+« Télécharger la fiche à jour » produit le YAML complet (sans les commentaires), pour l'archiver ou remplacer
+le fichier de configuration. Les coordonnées bancaires et le prélèvement ne se modifient pas dans l'interface,
+et aucun code d'accès n'est jamais demandé.
 
 ## Choix de conception
 

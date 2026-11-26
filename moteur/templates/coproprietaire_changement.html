@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block contenu %}
+<p class="discret"><a href="/app/{{ copro }}/coproprietaires">Copropriétaires</a></p>
+<h1>Changement de propriétaire</h1>
+<p class="chapeau">Après une vente, une succession ou une donation : choisissez les lots, puis le nouveau propriétaire. Les comptes de l'ancien propriétaire restent consultables.</p>
+
+<form class="formulaire fiche-copro" method="post" action="/app/{{ copro }}/coproprietaires/changement">
+  <input type="hidden" name="mutation" value="{{ mutation }}">
+  <fieldset>
+    <legend>Les lots qui changent de propriétaire</legend>
+    <p class="discret">Un seul vendeur à la fois.</p>
+    {% for nom, lots in par_proprio %}
+    <div class="lots-proprio">
+      <strong>{{ nom }}</strong>
+      <div class="choix-ligne">
+        {% for l in lots %}<label><input type="checkbox" name="lots" value="{{ l.numero }}" {% if l.numero in choisis %}checked{% endif %}> Lot {{ l.numero }} <span class="discret">{{ l.desc or l.type }}</span></label>{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </fieldset>
+
+  <fieldset>
+    <legend>Quand et pourquoi</legend>
+    <div class="deux-colonnes">
+      <label>Date de l'acte <input type="date" name="le" value="{{ le }}" required></label>
+      <label>Motif
+        <select name="motif">
+          <option value="vente">Vente</option>
+          <option value="succession">Succession</option>
+          <option value="donation">Donation</option>
+          <option value="autre">Autre</option>
+        </select></label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Le nouveau propriétaire</legend>
+    <div class="choix-ligne">
+      <label><input type="radio" name="qui" value="nouveau" checked> Une nouvelle personne</label>
+      <label><input type="radio" name="qui" value="existant"> Un copropriétaire déjà inscrit</label>
+    </div>
+    <div class="si-nouveau">
+      <label>Nom <input name="n_nom" maxlength="120" placeholder="Nom Prénom, ou raison sociale"></label>
+      <div class="deux-colonnes">
+        <label>Adresse électronique <input type="email" name="n_email" maxlength="160"></label>
+        <label>Téléphone <span class="discret">facultatif</span> <input type="tel" name="n_telephone" maxlength="30"></label>
+      </div>
+      <label>Adresse postale <span class="discret">si elle diffère de l'immeuble</span> <input name="n_adresse" maxlength="200"></label>
+      <div class="choix-ligne">
+        <label><input type="radio" name="n_envoi" value="email" checked> Documents par mail</label>
+        <label><input type="radio" name="n_envoi" value="courrier"> Par courrier</label>
+        <label><input type="checkbox" name="n_grands_caracteres"> En grands caractères</label>
+      </div>
+      <p class="discret">Le kit de bienvenue du nouveau copropriétaire se prépare ensuite dans <a href="/app/{{ copro }}/documents">Documents</a>.</p>
+    </div>
+    <div class="si-existant">
+      <label>Copropriétaire
+        <select name="existant">
+          {% for c in actuels %}<option value="{{ c.id }}">{{ c.nom }}</option>{% endfor %}
+        </select></label>
+    </div>
+  </fieldset>
+
+  <div><button type="submit">Enregistrer le changement</button></div>
+</form>
+{% endblock %}

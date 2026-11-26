@@ -73,6 +73,24 @@ exercice non clos, état financier déséquilibré), le PDF porte la mention PRO
 ⚠️ Mise en forme indicative, à comparer avec les modèles de l'arrêté du 14 mars 2005 (Légifrance).
 Pas un conseil comptable ; l'ADIL renseigne gratuitement.
 
+## Pièces justificatives et comptes consultables
+
+Chaque dépense de l'exercice peut recevoir sa pièce (écran Comptabilité → « Pièces justificatives », ou
+directement en saisissant la facture) : la facture d'un fournisseur, ou le justificatif d'une dépense directe
+du relevé. PDF, JPEG ou PNG, 8 Mo au plus. Les photos sont réenregistrées sans leurs métadonnées (position GPS,
+appareil), les PDF sans leurs propriétés (auteur, logiciel).
+
+Le syndic peut ensuite créer un **lien de consultation** pour les copropriétaires : les dépenses de l'exercice,
+leur total par nature et chaque justificatif, sans aucun nom de copropriétaire. Pour une dépense directe, c'est
+le fournisseur saisi qui s'affiche, jamais le libellé brut du relevé bancaire. Une pièce qui contient une
+donnée personnelle (le nom d'un copropriétaire débiteur sur une facture d'avocat, par exemple) se marque
+« privée » : elle n'apparaît alors que « sur demande au syndic ».
+
+Le lien est désactivé par défaut, jamais indexé par les moteurs de recherche, et se coupe ou se renouvelle à
+tout moment. La loi n'impose la consultation des pièces qu'avant l'assemblée qui approuve les comptes (loi du
+10 juillet 1965, art. 18-1) : aller plus loin est un choix du syndic, et sa meilleure protection contre les
+soupçons.
+
 ## L'évolution du budget
 
 Les données publiques du registre des copropriétés ne contiennent aucun montant : impossible de comparer une

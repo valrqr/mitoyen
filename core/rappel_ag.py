@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import re
 from datetime import date, datetime, timedelta, timezone
+from fiche_copro import actuels
 
 RAPPELS_JOURS = (7, 1)
 DUREE_DEFAUT_MIN = 120
@@ -130,7 +131,7 @@ def rappels(fiche: dict, ag: dict, copro: str, aujourd_hui: date | None = None,
     objet = (f"C'est demain : {ag['titre'].lower()} de la {nom_copro}, {ag['heure']}" if ecart == 1 else
              f"Rappel : {ag['titre'].lower()} de la {nom_copro}, {date_longue(d)}")
     envois, courrier = [], []
-    for c in fiche["coproprietaires"]:
+    for c in actuels(fiche):
         cid = c["id"]
         k = papier.canal(fiche, cid, jour)
         a_vote = cid in ag.get("correspondance", {})
@@ -196,7 +197,7 @@ def resultats(fiche: dict, ag: dict, copro: str, aujourd_hui: date | None = None
     d = date.fromisoformat(ag["date"])
     objet = f"Ce qu'a décidé l'assemblée générale du {d:%d/%m/%Y} – {nom_copro}"
     envois, courrier = [], []
-    for c in fiche["coproprietaires"]:
+    for c in actuels(fiche):
         cid = c["id"]
         k = ag_bref.contenu(fiche, ag, cid, dep)
         adoptees = [p for p in k["points"] if p.get("issue") == "adoptée"]

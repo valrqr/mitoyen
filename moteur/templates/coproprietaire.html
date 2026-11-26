@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block contenu %}
+<p class="discret"><a href="/app/{{ copro }}/coproprietaires">Copropriétaires</a></p>
+<h1>{{ c.nom }}</h1>
+<p class="chapeau">
+  {% if c.ancien %}Ancien copropriétaire{% if c.ancien_depuis %} depuis le {{ c.ancien_depuis|date_fr }}{% endif %} : il ne reçoit plus les envois de la copropriété.
+  {% else %}Lot{{ "s" if lots|length > 1 }} {% for l in lots %}{{ l.numero }} ({{ l.desc or l.type }}){{ ", " if not loop.last }}{% endfor %}.{% endif %}
+  <a href="/app/{{ copro }}/coproprietaires/changement?lots={{ lots|map(attribute='numero')|join(',') }}">Changer de propriétaire</a>
+</p>
+
+<form class="formulaire fiche-copro" method="post" action="/app/{{ copro }}/coproprietaires/{{ c.id }}">
+  <fieldset>
+    <legend>Coordonnées</legend>
+    <label>Nom <input name="nom" value="{{ c.nom }}" required maxlength="120"></label>
+    <label>Adresse électronique <input type="email" name="email" value="{{ c.email or '' }}" maxlength="160"></label>
+    <label>Téléphone <span class="discret">facultatif</span> <input type="tel" name="telephone" value="{{ c.telephone or '' }}" maxlength="30"></label>
+    <label>Adresse postale <span class="discret">si elle diffère de l'immeuble</span> <input name="adresse" value="{{ c.adresse or '' }}" maxlength="200"></label>
+  </fieldset>
+
+  <fieldset>
+    <legend>Comment recevoir les documents</legend>
+    <div class="choix-ligne">
+      <label><input type="radio" name="envoi" value="email" {% if c.envoi == "email" %}checked{% endif %}> Par mail</label>
+      <label><input type="radio" name="envoi" value="courrier" {% if c.envoi == "courrier" %}checked{% endif %}> Par courrier</label>
+      <label><input type="checkbox" name="grands_caracteres" {% if c.grands_caracteres %}checked{% endif %}> En grands caractères</label>
+    </div>
+    <p class="discret">Pour recevoir les notifications par courrier alors qu'une adresse électronique est connue, le copropriétaire en fait la demande (loi du 10 juillet 1965, art. 42-1) : gardez-en la trace.</p>
+    <div class="deux-colonnes">
+      <label>Demande de courrier reçue le <input type="date" name="demande_papier_le" value="{{ c.demande_papier.recue_le if c.demande_papier else '' }}"></label>
+      <label>Par
+        <select name="demande_papier_moyen">
+          {% set libelles = {"lettre_recommandee": "lettre recommandée", "main_propre": "remise en main propre", "email_accuse": "mail avec accusé de réception", "extranet": "espace en ligne", "ag": "en assemblée générale"} %}
+          {% for m in moyens %}<option value="{{ m }}" {% if c.demande_papier and c.demande_papier.moyen == m %}selected{% endif %}>{{ libelles.get(m, m) }}</option>{% endfor %}
+        </select></label>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Proche aidant <span class="discret">reçoit une copie des documents, ne vote jamais à sa place</span></legend>
+    <div class="deux-colonnes">
+      <label>Nom <input name="aidant_nom" value="{{ c.aidant.nom if c.aidant else '' }}" maxlength="120"></label>
+      <label>Adresse électronique <input type="email" name="aidant_email" value="{{ c.aidant.email if c.aidant and c.aidant.email else '' }}" maxlength="160"></label>
+    </div>
+    <label>Accord écrit du copropriétaire donné le <input type="date" name="aidant_consentement_le" value="{{ c.aidant.consentement_le if c.aidant else '' }}"></label>
+    <p class="discret">Videz le nom pour retirer l'aidant.</p>
+  </fieldset>
+
+  <label>Motif <span class="discret">facultatif, gardé dans l'historique</span> <input name="motif" maxlength="200" placeholder="Nouvelle adresse communiquée par mail le…"></label>
+  <div><button type="submit">Enregistrer</button></div>
+</form>
+
+<p class="discret">Les coordonnées bancaires et le prélèvement ne se modifient pas ici. Aucun code d'accès n'est jamais demandé ni conservé.</p>
+
+{% if historique %}
+<h2>Historique</h2>
+<table class="table historique">
+  <tbody>{% for h in historique %}<tr><td>{{ h.le|date_fr }}</td><td>{{ h.quoi }}{% if h.motif %} <span class="discret">({{ h.motif }})</span>{% endif %}</td></tr>{% endfor %}</tbody>
+</table>
+{% endif %}
+{% endblock %}

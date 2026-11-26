@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Les comptes · {{ c.copropriete }}</title>
+  <link rel="icon" type="image/png" href="/statique/icone_64.png">
+  <link rel="stylesheet" href="/statique/app.css">
+</head>
+<body class="public">
+<main class="public-page comptes-public">
+  <p class="public-marque"><img src="/statique/icone_64.png" alt="" width="28" height="28"> Mitoyen</p>
+  <h1>Les dépenses de la copropriété</h1>
+  <p class="chapeau">{{ c.copropriete }} · exercice {{ c.exercice }}{% if c.en_cours %}, en cours au {{ c.au|date_fr }}{% endif %}. Chaque dépense avec la pièce qui la justifie, partagée par le syndic.</p>
+
+  {% if c.exercices|length > 1 %}
+  <p class="exercices-public">{% for n in c.exercices %}{% if n == c.exercice %}<strong>{{ n }}</strong>{% else %}<a href="{{ base }}?exercice={{ n }}">{{ n }}</a>{% endif %}{{ " · " if not loop.last }}{% endfor %}</p>
+  {% endif %}
+
+  <div class="chiffres-comptes">
+    <div><b>{{ c.total|euros }}</b><span>de dépenses</span></div>
+    <div><b>{{ c.justifiees }} sur {{ c.nb }}</b><span>avec leur justificatif</span></div>
+  </div>
+
+  {% if c.lignes %}
+  <div class="defile">
+  <table class="table depenses-public">
+    <thead><tr><th>Date</th><th>Fournisseur</th><th>Nature</th><th class="nombre">Montant</th><th>Justificatif</th></tr></thead>
+    <tbody>
+      {% for x in c.lignes %}
+      <tr>
+        <td class="d-date">{{ x.date|date_fr }}</td>
+        <td class="d-fournisseur">{{ x.fournisseur }}{% if x.objet %}<br><span class="discret">{{ x.objet }}</span>{% endif %}</td>
+        <td class="d-nature">{{ x.libelle_compte }}</td>
+        <td class="nombre d-montant">{{ x.montant|euros }}</td>
+        <td class="d-piece">{% if x.piece and not x.piece.privee %}<a href="{{ base }}/piece/{{ x.cle }}" target="_blank" rel="noopener">Voir{% if x.piece.type == "pdf" %} (PDF){% endif %}</a>
+            {% elif x.piece %}<span class="discret">sur demande au syndic</span>
+            {% else %}<span class="discret">à venir</span>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <h2>Par nature de dépense</h2>
+  <table class="table">
+    <tbody>
+      {% for p in c.par_compte %}<tr><td>{{ p.libelle }}</td><td class="nombre">{{ p.total|euros }}</td></tr>{% endfor %}
+      <tr class="a-total"><td><strong>Total</strong></td><td class="nombre"><strong>{{ c.total|euros }}</strong></td></tr>
+    </tbody>
+  </table>
+  {% else %}
+  <div class="vide">Aucune dépense enregistrée pour cet exercice.</div>
+  {% endif %}
+
+  <p class="discret">Les comptes définitifs sont ceux que l'assemblée générale approuve. Avant cette assemblée, tout copropriétaire peut aussi consulter l'ensemble des pièces auprès du syndic (loi du 10 juillet 1965, art. 18-1). Une question sur une dépense ? Posez-la au syndic.</p>
+  <p class="discret">Établi avec <a href="https://mitoyen.app">Mitoyen</a>, l'outil open source des syndics bénévoles. Cette page ne contient aucun nom de copropriétaire.</p>
+</main>
+</body>
+</html>

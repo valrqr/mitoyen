@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block contenu %}
+<p class="discret"><a href="/app/{{ copro }}/comptes">Comptabilité</a></p>
+<h1>Pièces justificatives</h1>
+<p class="chapeau">Chaque dépense avec la facture ou le justificatif qui la fonde. Une fois les pièces jointes, vous pouvez partager les comptes avec les copropriétaires : c'est la meilleure réponse aux soupçons.</p>
+
+<div class="chiffres-comptes">
+  <div><b>{{ c.justifiees }} sur {{ c.nb }}</b><span>dépenses justifiées</span></div>
+  <div><b>{{ c.montant_justifie|euros }}</b><span>sur {{ c.total|euros }}</span></div>
+</div>
+
+{% if c.exercices|length > 1 %}
+<p>Exercice : {% for n in c.exercices %}{% if n == c.exercice %}<strong>{{ n }}</strong>{% else %}<a href="/app/{{ copro }}/comptes/pieces?exercice={{ n }}">{{ n }}</a>{% endif %}{{ " · " if not loop.last }}{% endfor %}</p>
+{% endif %}
+
+{% if c.lignes %}
+<div class="defile">
+<table class="table pieces">
+  <thead><tr><th>Date</th><th>Fournisseur</th><th>Nature</th><th class="nombre">Montant</th><th>Justificatif</th></tr></thead>
+  <tbody>
+  {% for x in c.lignes %}
+  <tr{% if not x.piece and x.cle %} class="sans-piece"{% endif %}>
+    <td style="white-space:nowrap">{{ x.date|date_fr }}</td>
+    <td>{{ x.fournisseur }}{% if x.objet %}<br><span class="discret">{{ x.objet }}</span>{% endif %}</td>
+    <td>{{ x.libelle_compte }}</td>
+    <td class="nombre">{{ x.montant|euros }}</td>
+    <td>
+      {% if not x.cle %}<span class="discret">écriture sans pièce (à nouveau, ajustement)</span>
+      {% elif x.piece %}
+        <a href="/app/{{ copro }}/comptes/pieces/voir/{{ x.cle }}" target="_blank" rel="noopener">{{ x.piece.nom }}</a>
+        {% if x.piece.privee %}<span class="etiquette-privee">privée</span>{% endif %}
+        <form method="post" action="/app/{{ copro }}/comptes/pieces/privee" class="en-ligne">
+          <input type="hidden" name="cle" value="{{ x.cle }}"><input type="hidden" name="exercice" value="{{ c.exercice }}">
+          <input type="hidden" name="privee" value="{{ '0' if x.piece.privee else '1' }}">
+          <button type="submit" class="lien">{{ "Montrer aux copropriétaires" if x.piece.privee else "Rendre privée" }}</button>
+        </form>
+        <form method="post" action="/app/{{ copro }}/comptes/pieces/retirer" class="en-ligne">
+          <input type="hidden" name="cle" value="{{ x.cle }}"><input type="hidden" name="exercice" value="{{ c.exercice }}">
+          <button type="submit" class="lien">Retirer</button>
+        </form>
+      {% else %}
+        <form method="post" action="/app/{{ copro }}/comptes/pieces" enctype="multipart/form-data" class="joindre">
+          <input type="hidden" name="cle" value="{{ x.cle }}"><input type="hidden" name="exercice" value="{{ c.exercice }}">
+          <input type="file" name="fichier" accept="application/pdf,image/jpeg,image/png" required aria-label="Justificatif : {{ x.fournisseur }}, {{ x.montant|euros }}">
+          <button type="submit" class="secondaire">Joindre</button>
+        </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="discret">PDF, JPEG ou PNG, 8 Mo au plus. Les photos sont réenregistrées sans leurs métadonnées (position, appareil). Une pièce qui contient une donnée personnelle (le nom d'un copropriétaire, par exemple) se marque « privée » : les copropriétaires voient alors « sur demande au syndic ».</p>
+{% else %}
+<div class="vide">Aucune dépense pour cet exercice. Les dépenses viennent des <a href="/app/{{ copro }}/comptes#factures">factures saisies</a> et des dépenses expliquées du relevé.</div>
+{% endif %}
+
+<h2 id="partage">Partager les comptes avec les copropriétaires</h2>
+<p>Un lien à transmettre aux copropriétaires (dans une convocation, un mail, l'affiche du hall) : ils voient les dépenses de l'exercice et leurs justificatifs, sans aucun nom de copropriétaire. Le lien n'est pas indexé par les moteurs de recherche ; vous pouvez le couper ou le renouveler à tout moment.</p>
+{% if lien %}
+<p class="lien-public"><a href="{{ lien }}" target="_blank" rel="noopener">{{ lien }}</a></p>
+<form method="post" action="/app/{{ copro }}/comptes/pieces/partage" class="en-ligne">
+  <button type="submit" name="action" value="renouveler" class="secondaire">Renouveler le lien</button>
+  <button type="submit" name="action" value="couper" class="secondaire">Couper le partage</button>
+</form>
+{% else %}
+<form method="post" action="/app/{{ copro }}/comptes/pieces/partage">
+  <button type="submit" name="action" value="activer">Créer le lien de consultation</button>
+</form>
+<p class="discret">Avant de partager, vérifiez qu'aucune pièce non privée ne contient de donnée personnelle.</p>
+{% endif %}
+{% endblock %}

@@ -95,7 +95,8 @@
 {% endif %}
 
 <h2 id="factures">Factures</h2>
-<form class="formulaire" method="post" action="/app/{{ copro }}/comptes/factures">
+<p><a href="/app/{{ copro }}/comptes/pieces">Pièces justificatives et comptes consultables</a> <span class="discret">: une pièce par dépense, et un lien pour que les copropriétaires voient les dépenses de l'exercice.</span></p>
+<form class="formulaire" method="post" action="/app/{{ copro }}/comptes/factures" enctype="multipart/form-data">
   <div class="champs">
     <label>Fournisseur <input name="fournisseur" required maxlength="60" placeholder="Ascenseurs Exemple"></label>
     <label>Date de la facture <input type="date" name="date" required value="{{ jour.isoformat() }}"></label>
@@ -121,6 +122,9 @@
         {% for o in operations_votees %}<option value="{{ o.id }}">{{ o.libelle }}</option>{% endfor %}
       </select></label>
     {% endif %}
+  </div>
+  <div class="champs">
+    <label>La facture (facultatif) <input type="file" name="piece" accept="application/pdf,image/jpeg,image/png"></label>
   </div>
   <div><button type="submit">Enregistrer la facture</button>
     <span class="discret">La charge compte à la date de la facture, payée ou non.</span></div>

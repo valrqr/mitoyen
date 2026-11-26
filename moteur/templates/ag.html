@@ -32,8 +32,9 @@
     <label>Lien de visio, si une AG précédente l'a autorisée <input type="url" name="visio" placeholder="https://"></label>
     <label style="display:flex;gap:.5rem;align-items:center;color:var(--encre)">
       <input type="checkbox" name="odj_type" value="true" checked> Reprendre l'ordre du jour habituel ({{ odj|length }} points : comptes, budget, fonds de travaux, syndic, conseil syndical…)</label>
-    <label>Autres questions, une par ligne
-      <textarea name="autres" rows="3" placeholder="Remplacement de la porte du hall"></textarea></label>
+    <label>Autres questions, une par ligne <span class="discret">montant TTC et nombre d'appels facultatifs, séparés par « ; »</span>
+      <textarea name="autres" rows="3" placeholder="Remplacement de la porte du hall ; 4 800 € ; 2 appels"></textarea></label>
+    <p class="discret" style="margin:0">Avec un montant, chaque copropriétaire voit sa part sur son formulaire de vote.</p>
     <p class="discret" style="margin:0">La convocation doit être notifiée au moins 21 jours avant : Mitoyen vous indiquera la date limite.</p>
     <div><button type="submit">Préparer l'assemblée</button></div>
   </form>

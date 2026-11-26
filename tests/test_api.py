@@ -1705,3 +1705,75 @@ def test_interface_consultation_petite_copropriete():
     assert "terme du délai" in n.post("/app/tilleuls/consultations/C001/cloture").text
     assert n.get("/app/tilleuls/consultations/C001/proces-verbal.pdf").content[:4] == b"%PDF"
     assert public.get("/consulter/tilleuls/C001/" + "x" * 24).status_code == 404
+
+
+def test_interface_modifier_la_fiche():
+    from moteur.api import DOSSIER_DATA
+    journal = DOSSIER_DATA / "tilleuls" / "fiche_modifications.json"
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    try:
+        assert "Lambert Sophie" in n.get("/app/tilleuls/coproprietaires/TL01").text
+        r = n.post("/app/tilleuls/coproprietaires/TL02", data={"nom": "Robert Karim", "email": "karim@exemple.fr",
+                   "telephone": "06 11 22 33 44", "envoi": "email", "motif": "mail du 12/03"}, follow_redirects=False)
+        assert r.status_code == 303
+        assert "06 11 22 33 44" in n.get("/app/tilleuls/coproprietaires/TL02").text
+        assert "Robert Karim : adresse électronique, téléphone" in n.get("/app/tilleuls/coproprietaires").text
+        # Vente des lots de TL02 à une nouvelle personne
+        from moteur.api import fiche_de
+        lots = [l["numero"] for l in fiche_de("tilleuls")["lots"] if l["proprietaire"] == "TL02"]
+        assert n.get("/app/tilleuls/coproprietaires/changement", params={"lots": ",".join(map(str, lots))}).status_code == 200
+        r = n.post("/app/tilleuls/coproprietaires/changement", data={"lots": lots, "le": "2027-03-12", "motif": "vente",
+                   "qui": "nouveau", "n_nom": "Nouveau Jean", "n_email": "jean@exemple.fr", "n_envoi": "email"})
+        page = r.text
+        assert "inscrit" in page and "Anciens copropriétaires" in page and "Nouveau Jean" in page
+        f = fiche_de("tilleuls")
+        assert all(l["proprietaire"] != "TL02" for l in f["lots"])
+        # Un lot inconnu : message, rien d'enregistré de plus
+        avant = journal.read_text()
+        r = n.post("/app/tilleuls/coproprietaires/changement", data={"lots": [999], "le": "2027-03-12", "qui": "existant",
+                   "existant": "TL01"})
+        assert "Choisissez au moins un lot" in r.text and journal.read_text() == avant
+        y = n.get("/app/tilleuls/coproprietaires/fiche.yaml")
+        assert y.status_code == 200 and "Nouveau Jean" in y.text and "ancien: true" in y.text
+    finally:
+        journal.unlink(missing_ok=True)
+
+
+def test_interface_comptes_consultables():
+    import io
+    import re as _re
+    from datetime import date
+    from pypdf import PdfWriter
+    from moteur.api import DOSSIER_DATA
+    d = DOSSIER_DATA / "tilleuls"
+    gardes = {f: (f.read_bytes() if f.exists() else None) for f in
+              (d / "compta" / "factures.json", d / "compta" / "pieces.json", d / "comptes_consultables.json")}
+    w = PdfWriter(); w.add_blank_page(200, 200); b = io.BytesIO(); w.write(b)
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    try:
+        r = n.post("/app/tilleuls/comptes/factures", data={"fournisseur": "Plomberie Exemple", "date": f"{date.today().year}-01-15",
+                   "montant": "240,00", "compte": "615"}, files={"piece": ("facture.pdf", b.getvalue(), "application/pdf")})
+        assert "Pièce jointe." in r.text
+        p = n.get("/app/tilleuls/comptes/pieces").text
+        assert "Plomberie Exemple" in p and "facture.pdf" in p
+        cle = _re.search(r'name="cle" value="(facture:F\d+)"', p).group(1)
+        r = n.post("/app/tilleuls/comptes/pieces/partage", data={"action": "activer"})
+        lien = _re.search(r'href="https?://[^"]+(/comptes/tilleuls/[^"]+)"', r.text).group(1)
+        n2 = _navigateur()                                      # un copropriétaire, sans session
+        pub = n2.get(lien)
+        assert pub.status_code == 200 and "Plomberie Exemple" in pub.text and pub.headers["x-robots-tag"] == "noindex"
+        assert "Lambert" not in pub.text and "Robert" not in pub.text      # aucun nom de copropriétaire
+        assert n2.get(f"{lien}/piece/{cle}").content[:4] == b"%PDF"
+        n.post("/app/tilleuls/comptes/pieces/privee", data={"cle": cle, "privee": "1"})
+        assert n2.get(f"{lien}/piece/{cle}").status_code == 404 and "sur demande" in n2.get(lien).text
+        n.post("/app/tilleuls/comptes/pieces/partage", data={"action": "couper"})
+        assert n2.get(lien).status_code == 404
+        assert n2.get("/app/tilleuls/comptes/pieces", follow_redirects=False).status_code == 303
+    finally:
+        for f, contenu in gardes.items():
+            if contenu is None:
+                f.unlink(missing_ok=True)
+            else:
+                f.write_bytes(contenu)

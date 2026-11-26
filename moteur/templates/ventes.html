@@ -66,8 +66,9 @@
     </form>
     {% endif %}
     {% if not v.fiche_mise_a_jour %}
+    <a class="bouton" href="/app/{{ copro }}/coproprietaires/changement?lots={{ v.lots|join(',') }}&le={{ v.date_acte }}&mutation={{ v.id }}">Inscrire le nouveau copropriétaire</a>
     <form method="post" action="/app/{{ copro }}/ventes/mutations/{{ v.id }}/fiche">
-      <button type="submit" class="secondaire">Le nouveau copropriétaire est inscrit</button>
+      <button type="submit" class="secondaire">C'est déjà fait</button>
     </form>
     {% endif %}
   </div>

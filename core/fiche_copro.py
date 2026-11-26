@@ -36,6 +36,12 @@ HORIZON_ALERTES_JOURS = 120
 # --------------------------------------------------------------------------- #
 # Chargement
 # --------------------------------------------------------------------------- #
+def actuels(fiche: dict) -> list[dict]:
+    """Les copropriétaires actuels : les anciens (lots vendus) restent dans la fiche pour leurs
+    comptes, mais ne reçoivent plus les envois de la copropriété."""
+    return [c for c in fiche["coproprietaires"] if not c.get("ancien")]
+
+
 def charger_fiche(chemin: str | Path) -> dict:
     with open(chemin, encoding="utf-8") as f:
         return yaml.safe_load(f)
@@ -83,11 +89,13 @@ def valider(fiche: dict) -> Rapport:
         if l["proprietaire"] not in copros:
             r.erreurs.append(f"Lot {l['numero']} : propriétaire inconnu {l['proprietaire']}")
     proprietaires_avec_lot = {l["proprietaire"] for l in lots}
-    for cid in copros:
-        if cid not in proprietaires_avec_lot:
+    for cid, c in copros.items():
+        if cid not in proprietaires_avec_lot and not c.get("ancien"):
             r.erreurs.append(f"Copropriétaire {cid} ne possède aucun lot")
+        if cid in proprietaires_avec_lot and c.get("ancien"):
+            r.erreurs.append(f"Copropriétaire {cid} marqué ancien alors qu'il possède encore un lot")
     for c in copros.values():
-        if c["envoi"] == "email" and not c.get("email"):
+        if c["envoi"] == "email" and not c.get("email") and not c.get("ancien"):
             r.erreurs.append(f"{c['id']} : envoi par email demandé mais aucune adresse")
     for e in fiche.get("equipements", []):
         if e["cle"] not in cles:

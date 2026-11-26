@@ -1,7 +1,8 @@
 {% extends "base.html" %}
 {% block contenu %}
 <h1>Copropriétaires</h1>
-<p class="chapeau">Comme sur le tableau d'interphone du hall, étage par étage. Chaque étiquette dit comment la personne reçoit ses documents et si elle a du retard.</p>
+<p class="chapeau">Comme sur le tableau d'interphone du hall, étage par étage. Chaque étiquette dit comment la personne reçoit ses documents et si elle a du retard. Cliquez sur un nom pour modifier ses coordonnées.</p>
+<p><a class="bouton" href="/app/{{ copro }}/coproprietaires/changement">Enregistrer un changement de propriétaire</a> <span class="discret">après une vente, une succession ou une donation</span></p>
 <div class="interphone">
   {% for etage, cartes in etages.items() %}
   <section class="plaque" aria-label="{{ etage }}">
@@ -9,7 +10,7 @@
     <div class="etiquettes">
       {% for k in cartes %}
       <article class="etiquette">
-        <div class="nom">{{ k.c.nom }}</div>
+        <div class="nom"><a href="/app/{{ copro }}/coproprietaires/{{ k.c.id }}">{{ k.c.nom }}</a></div>
         <div class="infos">
           {% if k.role %}<span class="role">{{ k.role }}</span> · {% endif %}
           Lot{{ "s" if k.lots|length > 1 }} {{ k.lots|map(attribute="numero")|join(", ") }}<br>
@@ -23,5 +24,21 @@
   </section>
   {% endfor %}
 </div>
-<p class="discret" style="margin-top:1.4rem">Pour modifier un copropriétaire (mail, courrier, aidant…), mettez à jour la fiche de la copropriété : <code>config/{{ copro }}.yaml</code>.</p>
+{% if anciens %}
+<h2 style="margin-top:2rem">Anciens copropriétaires</h2>
+<p class="discret">Ils ont vendu tous leurs lots. Ils restent dans la fiche pour leurs comptes, mais ne reçoivent plus les envois de la copropriété.</p>
+<ul class="anciens">
+  {% for a in anciens %}<li><a href="/app/{{ copro }}/coproprietaires/{{ a.c.id }}">{{ a.c.nom }}</a>{% if a.c.ancien_depuis %} · depuis le {{ a.c.ancien_depuis|date_fr }}{% endif %}{% if a.solde and a.solde|float > 0 %} · <span class="du">{{ a.solde|euros }} encore dus</span>{% endif %}</li>{% endfor %}
+</ul>
+{% endif %}
+
+<h2 style="margin-top:2rem">Historique des modifications</h2>
+{% if historique %}
+<table class="table historique">
+  <tbody>{% for h in historique %}<tr><td>{{ h.le|date_fr }}</td><td>{{ h.quoi }}{% if h.motif %} <span class="discret">({{ h.motif }})</span>{% endif %}</td></tr>{% endfor %}</tbody>
+</table>
+{% else %}
+<p class="discret">Aucune modification faite dans Mitoyen : la fiche est celle de <code>config/{{ copro }}.yaml</code>.</p>
+{% endif %}
+<p class="discret">Chaque modification est datée et conservée : c'est votre trace. <a href="/app/{{ copro }}/coproprietaires/fiche.yaml">Télécharger la fiche à jour</a> (pour l'archiver, ou remplacer le fichier de configuration).</p>
 {% endblock %}

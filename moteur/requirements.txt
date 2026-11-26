@@ -6,3 +6,4 @@ python-multipart>=0.0.9
 pypdf>=4.0
 jinja2>=3.1
 itsdangerous>=2.1
+pillow>=10.0

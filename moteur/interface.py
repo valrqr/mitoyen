@@ -434,7 +434,7 @@ def coproprietaires_page(request: Request, copro: str):
     conseil = set(fiche["gouvernance"].get("conseil_syndical", []))
     mt = {d["coproprietaire"] for d in A.meubles_tourisme.actives(A.meubles_tourisme.charger(A.DOSSIER_DATA, copro), jour)}
     cartes = []
-    for c in fiche["coproprietaires"]:
+    for c in A.fiche_copro.actuels(fiche):
         lots = sorted((l for l in fiche["lots"] if l["proprietaire"] == c["id"]), key=lambda l: l["numero"])
         hab = [l for l in lots if l["type"] not in ("cave", "parking")] or lots
         canal = A.papier.canal(fiche, c["id"], jour)["canal"]
@@ -445,7 +445,108 @@ def coproprietaires_page(request: Request, copro: str):
     for k in sorted(cartes, key=lambda k: (-k["etage"], k["lots"][0]["numero"] if k["lots"] else 0)):
         nom = ETAGES.get(k["etage"], f"{k['etage']}{'er' if k['etage'] == 1 else 'e'} étage")
         etages.setdefault(nom, []).append(k)
-    return page(request, "coproprietaires.html", copro, etages=etages)
+    anciens = [{"c": c, "solde": imp["comptes"].get(c["id"], {}).get("impaye") if imp else None}
+               for c in fiche["coproprietaires"] if c.get("ancien")]
+    j = A.fiche_edition.journal(A.DOSSIER_DATA, copro)
+    return page(request, "coproprietaires.html", copro, etages=etages, anciens=anciens,
+                historique=A.fiche_edition.historique(fiche, j)[:30])
+
+
+def _saisie_formulaire(f, prefixe: str = "") -> dict:
+    """Les champs d'un copropriétaire tels que postés par le formulaire."""
+    noms = ("nom", "email", "telephone", "adresse", "envoi", "demande_papier_le", "demande_papier_moyen",
+            "aidant_nom", "aidant_email", "aidant_consentement_le")
+    saisie = {k: (f.get(prefixe + k) or "").strip() for k in noms if (prefixe + k) in f}
+    saisie["grands_caracteres"] = f.get(prefixe + "grands_caracteres") == "on"
+    return saisie
+
+
+@routeur.get("/{copro}/coproprietaires/changement", response_class=HTMLResponse)
+def coproprietaires_changement_page(request: Request, copro: str, lots: str = "", le: str = "", mutation: str = ""):
+    exiger(request, copro)
+    fiche = A.fiche_de(copro)
+    choisis = {int(x) for x in re.findall(r"\d+", lots)}
+    noms = {c["id"]: c["nom"] for c in fiche["coproprietaires"]}
+    par_proprio: dict[str, list] = {}
+    for l in sorted(fiche["lots"], key=lambda x: x["numero"]):
+        par_proprio.setdefault(l["proprietaire"], []).append(l)
+    return page(request, "coproprietaire_changement.html", copro, onglet="coproprietaires",
+                par_proprio=[(noms[cid], ls) for cid, ls in sorted(par_proprio.items(), key=lambda x: noms[x[0]])],
+                choisis=choisis, le=le or aujourdhui(request).isoformat(), mutation=mutation,
+                actuels=sorted(A.fiche_copro.actuels(fiche), key=lambda c: c["nom"]),
+                moyens=A.papier.MOYENS_DEMANDE)
+
+
+@routeur.post("/{copro}/coproprietaires/changement")
+async def coproprietaires_changement(request: Request, copro: str):
+    exiger(request, copro)
+    f = await request.form()
+    try:
+        numeros = [int(x) for x in f.getlist("lots")]
+        le = date.fromisoformat(f.get("le") or "")
+    except ValueError:
+        return retour(f"/app/{copro}/coproprietaires/changement", "Choisissez les lots et la date du changement.", request)
+    motif = f.get("motif") or "vente"
+    try:
+        if f.get("qui") == "nouveau":
+            cid, fiche = A.fiche_edition.changer_proprietaire(
+                A.DOSSIER_DATA, copro, A.fiche_de_base(copro), numeros, le,
+                nouveau_saisie=_saisie_formulaire(f, "n_"), motif=motif)
+        else:
+            cid, fiche = A.fiche_edition.changer_proprietaire(
+                A.DOSSIER_DATA, copro, A.fiche_de_base(copro), numeros, le, nouveau=f.get("existant"), motif=motif)
+    except A.fiche_edition.FicheInvalide as e:
+        lots = ",".join(map(str, numeros))
+        return retour(f"/app/{copro}/coproprietaires/changement?lots={lots}&le={le.isoformat()}"
+                      f"&mutation={f.get('mutation') or ''}", str(e), request)
+    if f.get("mutation"):
+        try:
+            A.etat_date.marquer_fiche_a_jour(A.DOSSIER_DATA, copro, f.get("mutation"))
+        except A.etat_date.EtatDateInvalide:
+            pass
+    nom = next(c["nom"] for c in fiche["coproprietaires"] if c["id"] == cid)
+    s = "s" if len(numeros) > 1 else ""
+    return retour(f"/app/{copro}/coproprietaires", f"Lot{s} {', '.join(map(str, sorted(numeros)))} inscrit{s} "
+                  f"au nom de {nom}.", request)
+
+
+@routeur.get("/{copro}/coproprietaires/fiche.yaml")
+def coproprietaires_fiche_yaml(request: Request, copro: str):
+    """La fiche à jour, pour l'archiver ou remplacer config/<copro>.yaml (les commentaires ne suivent pas)."""
+    exiger(request, copro)
+    import yaml
+    texte = ("# Fiche à jour exportée par Mitoyen le " + aujourdhui(request).isoformat()
+             + " : base config/ + modifications faites dans l'interface.\n"
+             + yaml.safe_dump(A.fiche_de(copro), allow_unicode=True, sort_keys=False))
+    return Response(texte, media_type="text/yaml; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="{copro}.yaml"'})
+
+
+@routeur.get("/{copro}/coproprietaires/{cid}", response_class=HTMLResponse)
+def coproprietaire_page(request: Request, copro: str, cid: str):
+    exiger(request, copro)
+    fiche = A.fiche_de(copro)
+    c = next((x for x in fiche["coproprietaires"] if x["id"] == cid), None)
+    if c is None:
+        raise HTTPException(404, "Copropriétaire inconnu")
+    lots = sorted((l for l in fiche["lots"] if l["proprietaire"] == cid), key=lambda l: l["numero"])
+    j = [m for m in A.fiche_edition.journal(A.DOSSIER_DATA, copro)
+         if m.get("id") == cid or cid in (m.get("ancien"), m.get("nouveau"))
+         or (m.get("coproprietaire") or {}).get("id") == cid]
+    return page(request, "coproprietaire.html", copro, onglet="coproprietaires", c=c, lots=lots,
+                moyens=A.papier.MOYENS_DEMANDE, historique=A.fiche_edition.historique(fiche, j))
+
+
+@routeur.post("/{copro}/coproprietaires/{cid}")
+async def coproprietaire_modifier(request: Request, copro: str, cid: str):
+    exiger(request, copro)
+    f = await request.form()
+    try:
+        A.fiche_edition.modifier_coproprietaire(A.DOSSIER_DATA, copro, A.fiche_de_base(copro), cid,
+                                                _saisie_formulaire(f), aujourdhui(request), f.get("motif") or "")
+    except A.fiche_edition.FicheInvalide as e:
+        return retour(f"/app/{copro}/coproprietaires/{cid}", str(e), request)
+    return retour(f"/app/{copro}/coproprietaires/{cid}", "Fiche mise à jour.", request)
 
 
 # --------------------------------------------------------------------------- #
@@ -964,9 +1065,10 @@ async def comptes_ouverture(request: Request, copro: str):
 
 
 @routeur.post("/{copro}/comptes/factures")
-def comptes_facture(request: Request, copro: str, fournisseur: str = Form(...), jour: date = Form(..., alias="date"),
-                    montant: str = Form(...), compte: str = Form(...), libelle: str = Form(""),
-                    cle: str = Form(""), operation: str = Form("")):
+async def comptes_facture(request: Request, copro: str, fournisseur: str = Form(...),
+                          jour: date = Form(..., alias="date"), montant: str = Form(...), compte: str = Form(...),
+                          libelle: str = Form(""), cle: str = Form(""), operation: str = Form(""),
+                          piece: UploadFile | None = File(None)):
     exiger(request, copro)
     C = A.compta
     try:
@@ -981,8 +1083,78 @@ def comptes_facture(request: Request, copro: str, fournisseur: str = Form(...), 
                               operation=operation or None)
     except A.compta.ComptaInvalide as e:
         return retour(f"/app/{copro}/comptes#factures", f"Facture non enregistrée : {e}", request)
+    suite = ""
+    if piece is not None and piece.filename:
+        try:
+            A.pieces.ajouter(A.DOSSIER_DATA, copro, f"facture:{f['id']}", await piece.read(A.pieces.TAILLE_MAX + 1),
+                             piece.filename, aujourdhui(request))
+            suite = " Pièce jointe."
+        except A.pieces.PieceInvalide as e:
+            suite = f" La pièce n'a pas été jointe : {e}"
     return retour(f"/app/{copro}/comptes#factures", f"Facture {f['id']} enregistrée : {euros(f['montant'])} "
-                  f"chez {f['fournisseur']}.", request)
+                  f"chez {f['fournisseur']}.{suite}", request)
+
+
+@routeur.get("/{copro}/comptes/pieces", response_class=HTMLResponse)
+def comptes_pieces(request: Request, copro: str, exercice: int | None = None):
+    exiger(request, copro)
+    c = A.comptes_consultables(A.fiche_de(copro), copro, exercice, aujourdhui(request))
+    return page(request, "pieces.html", copro, onglet="comptes", c=c, lien=A.lien_comptes(copro))
+
+
+@routeur.post("/{copro}/comptes/pieces")
+async def comptes_pieces_joindre(request: Request, copro: str, cle: str = Form(...), exercice: str = Form(""),
+                                 fichier: UploadFile = File(...)):
+    exiger(request, copro)
+    cible = f"/app/{copro}/comptes/pieces" + (f"?exercice={int(exercice)}" if exercice.isdigit() else "")
+    try:
+        A.pieces.ajouter(A.DOSSIER_DATA, copro, cle, await fichier.read(A.pieces.TAILLE_MAX + 1),
+                         fichier.filename or "piece", aujourdhui(request))
+    except A.pieces.PieceInvalide as e:
+        return retour(cible, f"Pièce non jointe : {e}", request)
+    return retour(cible, "Pièce jointe.", request)
+
+
+@routeur.post("/{copro}/comptes/pieces/privee")
+def comptes_pieces_privee(request: Request, copro: str, cle: str = Form(...), privee: str = Form(...),
+                          exercice: str = Form("")):
+    exiger(request, copro)
+    cible = f"/app/{copro}/comptes/pieces" + (f"?exercice={int(exercice)}" if exercice.isdigit() else "")
+    try:
+        A.pieces.rendre_privee(A.DOSSIER_DATA, copro, cle, privee == "1")
+    except A.pieces.PieceInvalide as e:
+        return retour(cible, str(e), request)
+    return retour(cible, "Pièce privée : visible sur demande seulement." if privee == "1"
+                  else "Pièce visible des copropriétaires.", request)
+
+
+@routeur.post("/{copro}/comptes/pieces/retirer")
+def comptes_pieces_retirer(request: Request, copro: str, cle: str = Form(...), exercice: str = Form("")):
+    exiger(request, copro)
+    cible = f"/app/{copro}/comptes/pieces" + (f"?exercice={int(exercice)}" if exercice.isdigit() else "")
+    try:
+        A.pieces.retirer(A.DOSSIER_DATA, copro, cle)
+    except A.pieces.PieceInvalide as e:
+        return retour(cible, str(e), request)
+    return retour(cible, "Pièce retirée.", request)
+
+
+@routeur.get("/{copro}/comptes/pieces/voir/{cle}")
+def comptes_pieces_voir(request: Request, copro: str, cle: str):
+    exiger(request, copro)
+    f = A.pieces.fichier(A.DOSSIER_DATA, copro, cle)
+    if f is None:
+        raise HTTPException(404, "Pièce introuvable")
+    return FileResponse(f[0], media_type=f[1], headers={"Content-Disposition": "inline", "Cache-Control": "no-store"})
+
+
+@routeur.post("/{copro}/comptes/pieces/partage")
+def comptes_pieces_partage(request: Request, copro: str, action: str = Form(...)):
+    exiger(request, copro)
+    A.pieces.partager(A.DOSSIER_DATA, copro, action != "couper", renouveler=action == "renouveler")
+    msg = {"couper": "Partage coupé : l'ancien lien ne fonctionne plus.",
+           "renouveler": "Nouveau lien créé : l'ancien ne fonctionne plus."}.get(action, "Lien de consultation créé.")
+    return retour(f"/app/{copro}/comptes/pieces#partage", msg, request)
 
 
 @routeur.post("/{copro}/comptes/depenses/{op_id}", response_class=HTMLResponse)
