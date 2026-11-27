@@ -278,12 +278,26 @@
         <p class="chapeau">Un seul e-mail, à l’ouverture de l’offre hébergée.</p>
       </div>
       <div>
-        <a class="btn plein grand" href="mailto:contact@mitoyen.app?subject=Liste%20d%E2%80%99int%C3%A9r%C3%AAt%20Mitoyen&amp;body=Bonjour%2C%0A%0AJe%20souhaite%20%C3%AAtre%20pr%C3%A9venu%20de%20l%E2%80%99ouverture%20de%20l%E2%80%99offre%20h%C3%A9berg%C3%A9e.%0A%0ANombre%20de%20lots%20de%20ma%20copropri%C3%A9t%C3%A9%20%3A%20%0A">Écrire à contact@mitoyen.app</a>
-        <p class="petit">Votre adresse sert uniquement à vous prévenir. Elle n’est ni revendue ni partagée. Suppression sur simple demande à <a href="mailto:rgpd@mitoyen.app">rgpd@mitoyen.app</a>.</p>
+        <a class="btn plein grand" href="mailto:contact@mitoyen.app?subject=Liste%20d%E2%80%99int%C3%A9r%C3%AAt%20Mitoyen&amp;body=Bonjour%2C%0A%0AJe%20souhaite%20%C3%AAtre%20pr%C3%A9venu%20de%20l%E2%80%99ouverture%20de%20l%E2%80%99offre%20h%C3%A9berg%C3%A9e.%0A%0ANombre%20de%20lots%20de%20ma%20copropri%C3%A9t%C3%A9%20%3A%20%0A">Écrire un e-mail</a>
+        <p class="adresse-copie"><span>Ou écrivez depuis votre messagerie à <strong>contact@mitoyen.app</strong></span> <button type="button" class="btn vide copier" data-copier="contact@mitoyen.app" hidden>Copier l’adresse</button><span class="copie-ok" role="status"></span></p>
+        <p class="petit">Indiquez le nombre de lots de votre copropriété. Votre adresse sert uniquement à vous prévenir. Elle n’est ni revendue ni partagée. Suppression sur simple demande à <a href="mailto:rgpd@mitoyen.app">rgpd@mitoyen.app</a>.</p>
       </div>
     </div>
   </section>
 </main>
+<script>
+  document.querySelectorAll("[data-copier]").forEach(function (b) {
+    if (!navigator.clipboard) return;
+    b.hidden = false;
+    b.addEventListener("click", function () {
+      var ok = b.parentNode.querySelector(".copie-ok");
+      navigator.clipboard.writeText(b.dataset.copier).then(function () {
+        ok.textContent = "Adresse copiée.";
+        setTimeout(function () { ok.textContent = ""; }, 3000);
+      });
+    });
+  });
+</script>
 
 <footer>
   <div class="cadre">

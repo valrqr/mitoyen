@@ -120,6 +120,10 @@ footer p + p { margin-top: 8px; }
 .donnees tfoot th, .donnees tfoot td { font-weight: 700; color: var(--encre); border-bottom: 0; }
 .donnees .nb { text-align: right; font-variant-numeric: tabular-nums; }
 .liste-texte { padding-left: 20px; margin: 12px 0 0; }
+.adresse-copie { margin: 18px 0 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-size: 16px; }
+.adresse-copie strong { font-weight: 600; color: var(--encre); user-select: all; white-space: nowrap; }
+.btn.copier { padding: 8px 14px; font-size: 14px; }
+.copie-ok { font-size: 14px; color: var(--gris); }
 .liste-texte li + li { margin-top: 10px; }
 .liste-texte strong { color: var(--encre); }
 .modele { margin-top: 20px; padding: 28px 32px; background: var(--papier); border: 1px solid var(--filet); border-left: 4px solid var(--encre); border-radius: 4px; color: var(--encre); font-size: 16px; }
