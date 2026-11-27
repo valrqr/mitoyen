@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Relais du syndic · {{ copropriete }}</title>
+  <link rel="icon" type="image/png" href="/statique/icone_64.png">
+  <link rel="stylesheet" href="/statique/app.css">
+</head>
+<body class="public">
+<main class="public-page relais-public">
+  <p class="public-marque"><img src="/statique/icone_64.png" alt="" width="28" height="28"> Mitoyen</p>
+  <h1>Relais du syndic</h1>
+  <p class="chapeau">{{ copropriete }}. Bonjour {{ a.relais.nom }} : le syndic est absent jusqu'au {{ a.au|date_fr }} inclus et vous a choisi comme relais. Cette page ne s'ouvre que pendant son absence.</p>
+
+  <h2>Les signalements en cours</h2>
+  {% if signalements %}
+  <ul class="relais-liste">
+    {% for s in signalements %}
+    <li>
+      <strong>{{ s.categorie_libelle }}</strong>{% if s.niveau == "urgent" %} <span class="niveau">Urgent</span>{% endif %}<br>
+      <span>{{ s.lieu }}</span><br>
+      <span class="discret">Signalé le {{ s.cree_le[:10]|date_fr }} · {{ s.statut_libelle }}</span>
+      <p>{{ s.description }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="vide">Aucun signalement en cours. Les nouveaux apparaîtront ici : rechargez la page.</div>
+  {% endif %}
+
+  <h2>Les numéros utiles</h2>
+  <ul class="relais-numeros">
+    {% for libelle, numero in numeros %}<li><a href="tel:{{ numero|replace(' ', '') }}">{{ numero }}</a> : {{ libelle }}</li>{% endfor %}
+  </ul>
+  {% if prestataires %}
+  <p class="discret">Prestataires sous contrat : {% for p in prestataires %}{{ p.objet|lower }} ({{ p.prestataire }}){{ ", " if not loop.last else "." }}{% endfor %}</p>
+  {% endif %}
+
+  <h2>Ce que vous pouvez faire</h2>
+  <ul class="relais-liste">
+    <li>En cas de danger, appelez d'abord les secours.</li>
+    <li>Prévenez le syndic de ce qui ne peut pas attendre son retour, par le moyen convenu avec lui.</li>
+    <li>Vous ne commandez une intervention au nom de la copropriété que si l'assemblée générale vous a délégué les urgences, et dans la limite qu'elle a fixée. Gardez alors le devis ou la facture pour le syndic.</li>
+  </ul>
+  <p class="discret">Cette page n'affiche ni les comptes de la copropriété ni le nom des voisins qui ont signalé un problème. Établi avec <a href="https://mitoyen.app">Mitoyen</a>.</p>
+</main>
+</body>
+</html>

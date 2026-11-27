@@ -17,6 +17,7 @@ STYLE_SIGNALEMENT = """
 .urgence{background:#fff;border:2px solid #1E1E1E;border-radius:12px;padding:12px 16px;margin:0 0 20px}
 .urgence h2{font-size:17px;margin:0 0 6px}.urgence ul{margin:0;padding-left:18px}.urgence li{margin:4px 0}
 .urgence a{font-weight:700}
+.absence{background:#F1F2EF;border-radius:12px;padding:12px 16px;margin:0 0 20px}
 label.champ{display:block;font-weight:700;margin:0 0 6px}
 .aide{font-size:14px;color:#4A4945;margin:-2px 0 8px}
 input[type=text],textarea,input[type=file]{width:100%;font:inherit;padding:12px;border:2px solid #E3E1DA;border-radius:10px;
@@ -51,14 +52,18 @@ def _quand(iso: str) -> str:
 
 def page_signaler(copropriete: str, categories: dict, niveaux: dict, urgences: list[tuple[str, str]],
                   suivi: list[dict], message: str | None = None, erreur: str | None = None,
-                  saisie: dict | None = None) -> str:
+                  saisie: dict | None = None, absence: dict | None = None) -> str:
     saisie = saisie or {}
+    if absence and absence.get("contact"):
+        urgences = urgences + [(absence["contact"]["libelle"], absence["contact"]["telephone"])]
     h = ['<h1>Signaler un problème</h1>',
          f'<p class="sous">{escape(copropriete)}. Votre message arrive directement au syndic.</p>']
     if message:
         h.append(f'<p class="ok" role="status">{escape(message)}</p>')
     if erreur:
         h.append(f'<p class="erreur" role="alert">{escape(erreur)}</p>')
+    if absence:
+        h.append(f'<p class="absence">{escape(absence["texte"])}</p>')
 
     tel = "".join(f'<li><a href="tel:{escape(n.replace(" ", ""))}">{escape(n)}</a> : {escape(l)}</li>' for l, n in urgences)
     h.append('<section class="urgence" aria-labelledby="t-urgence"><h2 id="t-urgence">Danger immédiat ? Appelez d’abord</h2>'

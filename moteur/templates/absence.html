@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block contenu %}
+<h1>Je pars en vacances</h1>
+<p class="chapeau">Indiquez vos dates : Mitoyen liste ce qui tombe pendant votre absence pour que vous le prépariez avant de partir, prévient les voisins qui signalent un problème, et donne à un relais de confiance une page pour les urgences. Vous restez le seul syndic.</p>
+
+{% macro formulaire(a) %}
+<form method="post" action="/app/{{ copro }}/absence" class="formulaire fiche-copro">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:.9rem">
+    <label>Départ <input type="date" name="du" required value="{{ a.du if a else '' }}"></label>
+    <label>Retour (dernier jour d'absence) <input type="date" name="au" required value="{{ a.au if a else '' }}"></label>
+  </div>
+  <fieldset>
+    <legend>Le relais (facultatif)</legend>
+    <p class="discret" style="margin-top:0">Un voisin de confiance, de préférence au conseil syndical{% if suggestions %} : {% for c in suggestions %}{{ c.nom }}{{ ", " if not loop.last }}{% endfor %}{% endif %}. Demandez-lui son accord avant.</p>
+    <label>Nom <input type="text" name="relais_nom" maxlength="80" value="{{ a.relais.nom if a and a.relais else '' }}"></label>
+    <label>Téléphone <input type="tel" name="relais_telephone" maxlength="20" value="{{ a.relais.telephone if a and a.relais else '' }}"></label>
+    <label>Adresse électronique <input type="email" name="relais_email" maxlength="120" value="{{ a.relais.email if a and a.relais else '' }}"></label>
+    <label class="case"><input type="checkbox" name="telephone_public" value="1"{% if a and a.telephone_public %} checked{% endif %}>
+      Le relais accepte que son numéro s'affiche sur la page de signalement, pour les urgences</label>
+  </fieldset>
+  <label>Un mot pour les voisins (facultatif)
+    <input type="text" name="message" maxlength="300" placeholder="Par exemple : les badges seront remis à mon retour." value="{{ a.message if a else '' }}"></label>
+  <div><button type="submit">{{ "Enregistrer les changements" if a else "Enregistrer mon absence" }}</button></div>
+</form>
+{% endmacro %}
+
+{% if not a %}
+{{ formulaire(none) }}
+{% else %}
+<div class="colonnes">
+<section>
+  <h2>À préparer avant de partir</h2>
+  {% if taches %}
+  <p class="discret" style="margin-top:-.4rem">Ce qui tombe d'ici votre retour et la semaine qui suit. Une fois fait, la ligne disparaît.</p>
+  <ul class="a-faire">
+    {% for t in taches %}
+    <li>{% if t.lien %}<a href="{{ t.lien }}" class="important">{% else %}<div class="important">{% endif %}
+      <strong>{{ t.titre }}</strong><span class="quand">{{ t.quand|date_fr }}</span>
+      <span class="detail">{{ t.detail }}</span>
+    {% if t.lien %}</a>{% else %}</div>{% endif %}</li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <div class="vide">Rien ne tombe pendant votre absence. Les rappels d'AG, s'il y en a, partent tout seuls.</div>
+  {% endif %}
+
+  <h2>Ce que voient les voisins</h2>
+  <p class="discret" style="margin-top:-.4rem">Sur la page de signalement, pendant l'absence seulement :</p>
+  <div class="formulaire"><p style="margin:0">{{ avis.texte }}</p>
+    {% if avis.contact %}<p style="margin:.5rem 0 0"><strong>{{ avis.contact.telephone }}</strong> : {{ avis.contact.libelle }}</p>{% endif %}</div>
+
+  <h2 id="delegation">Déléguer les urgences au relais</h2>
+  <p>Sans décision de l'assemblée générale, le relais ne peut rien commander au nom de la copropriété : seul le syndic engage la copropriété. L'AG peut lui déléguer les seules urgences, avec un plafond, à la majorité de l'article 25. Projet de résolution à inscrire à la prochaine AG :</p>
+  <form method="get" action="#delegation" style="display:flex;flex-wrap:wrap;gap:.6rem;align-items:flex-end;margin-bottom:.6rem">
+    <label>Plafond par intervention (€) <input type="number" name="plafond" min="50" max="10000" step="50" value="{{ plafond }}"></label>
+    <button type="submit" class="secondaire">Mettre à jour</button>
+  </form>
+  <textarea readonly rows="7" style="width:100%;font:inherit;line-height:1.45">{{ resolution }}</textarea>
+  <p class="discret">Pas un conseil juridique : faites vérifier la rédaction par l'ADIL de votre département.</p>
+</section>
+
+<aside>
+  <div class="chiffres">
+    <div class="chiffre neutre"><span>{{ "Absent" if en_cours else "Absence prévue" }}</span><b>{{ a.du|date_fr }}</b><small>au {{ a.au|date_fr }} inclus</small></div>
+  </div>
+  {% if a.relais %}
+  <h3>La page du relais</h3>
+  <p class="discret" style="margin-top:0">Envoyez ce lien à {{ a.relais.nom }}. Il s'ouvre la veille du départ et jusqu'au retour : signalements en cours et numéros d'astreinte, sans les comptes ni les noms des voisins.</p>
+  <p class="lien-public"><a href="{{ lien_relais }}" target="_blank" rel="noopener">{{ lien_relais }}</a></p>
+  {% else %}
+  <p class="discret">Sans relais, les voisins sont simplement prévenus de votre retour.</p>
+  {% endif %}
+  <details class="formulaire" style="margin-top:1rem"><summary>Modifier</summary>{{ formulaire(a) }}</details>
+  <form method="post" action="/app/{{ copro }}/absence/annuler" style="margin-top:1rem">
+    <button type="submit" class="secondaire">{{ "Je suis rentré" if en_cours else "Annuler l'absence" }}</button>
+  </form>
+</aside>
+</div>
+{% endif %}
+{% endblock %}

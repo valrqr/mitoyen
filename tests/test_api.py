@@ -1831,3 +1831,48 @@ def test_reglement_consultable_par_lien():
         assert c.get("/reglement/tilleuls/" + "x" * 22).status_code == 404
     finally:
         shutil.rmtree(dossier, ignore_errors=True)
+
+
+def test_je_pars_en_vacances():
+    """Absence du syndic : tâches à préparer, avis aux voisins, page du relais limitée à l'absence."""
+    from datetime import date, timedelta
+    from moteur.api import DOSSIER_DATA
+    import absence
+    import signalements
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    auj = date.today()
+    try:
+        assert "Je pars en vacances" in n.get("/app/mimosas").text
+        r = n.post("/app/mimosas/absence", data={"du": auj.isoformat(), "au": (auj - timedelta(days=3)).isoformat()})
+        assert "précède" in r.text and absence.charger(DOSSIER_DATA, "mimosas") is None
+        r = n.post("/app/mimosas/absence", data={
+            "du": (auj - timedelta(days=1)).isoformat(), "au": (auj + timedelta(days=14)).isoformat(),
+            "relais_nom": "Laurent Inès", "relais_telephone": "01 99 00 00 01", "telephone_public": "1",
+            "message": "Les badges seront remis à mon retour."})
+        assert "Absence enregistrée" in r.text and "Ce que voient les voisins" in r.text
+        assert "Laurent Inès, copropriétaire" in r.text
+        assert "1 500 € TTC" in n.get("/app/mimosas/absence", params={"plafond": "1500"}).text
+        a = absence.charger(DOSSIER_DATA, "mimosas")
+        # Les voisins : avis, numéro du relais, accusé de réception adapté
+        jeton = signalements.jeton(DOSSIER_DATA, "mimosas")
+        page = c.get(f"/signaler/mimosas/{jeton}").text
+        assert "Le syndic est absent jusqu" in page and "badges seront remis" in page and "tel:0199000001" in page
+        assert "traitera à son retour" in c.get(f"/signaler/mimosas/{jeton}", params={"envoye": 1}).text
+        # Le relais : les signalements en cours, sans le contact de celui qui signale
+        signalements.creer(DOSSIER_DATA, "mimosas", "fuite", "Cave 3", "De l'eau coule du plafond.", "urgent",
+                           "Mme Témoin, lot 9")
+        rel = c.get(f"/relais/mimosas/{a['jeton_relais']}")
+        assert rel.status_code == 200 and rel.headers["x-robots-tag"] == "noindex"
+        assert "Cave 3" in rel.text and "De l&#39;eau coule" in rel.text and "Témoin" not in rel.text
+        assert "Ascenseurs Exemple" in rel.text and "01 99 00 12 34" in rel.text
+        assert c.get("/relais/mimosas/" + "x" * 22).status_code == 404
+        # Retour : tout redevient normal, le lien du relais s'éteint
+        n.post("/app/mimosas/absence/annuler")
+        assert c.get(f"/relais/mimosas/{a['jeton_relais']}").status_code == 404
+        assert "Le syndic est absent" not in c.get(f"/signaler/mimosas/{jeton}").text
+    finally:
+        absence.annuler(DOSSIER_DATA, "mimosas")
+        d = signalements.charger(DOSSIER_DATA, "mimosas")
+        d["signalements"] = [s for s in d["signalements"] if s["lieu"] != "Cave 3"]
+        signalements.sauver(DOSSIER_DATA, "mimosas", d)

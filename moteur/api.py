@@ -122,6 +122,7 @@ import etat_date  # noqa: E402
 import bulletin  # noqa: E402
 import consultation  # noqa: E402
 import rappel_ag  # noqa: E402
+import absence  # noqa: E402
 import quote_part  # noqa: E402
 import ag_bref  # noqa: E402
 import evolution_budget  # noqa: E402
@@ -1434,7 +1435,7 @@ def _page_signaler(copro: str, message: str | None = None, erreur: str | None = 
     html = page_signalement.page_signaler(
         fiche["copropriete"]["nom"], signalements.CATEGORIES, signalements.NIVEAUX,
         signalements.URGENCES + signalements.astreintes(fiche), signalements.vue_publique(donnees),
-        message, erreur, saisie)
+        message, erreur, saisie, absence.avis_voisins(absence.charger(DOSSIER_DATA, copro), date.today()))
     return HTMLResponse(html, status_code=statut, headers={"Cache-Control": "no-store"})
 
 
@@ -1603,7 +1604,39 @@ def voter_consultation(copro: str = Copro, cid: str = PathParam(..., pattern=r"^
 def page_signaler(copro: str = Copro, jeton: str = Jeton, envoye: int = 0):
     if copro not in lister_copros() or not signalements.jeton_valide(DOSSIER_DATA, copro, jeton):
         return HTMLResponse(page_signalement.page_lien_invalide(), status_code=404)
-    return _page_signaler(copro, "Merci, votre signalement est arrivé chez le syndic." if envoye else None)
+    if not envoye:
+        return _page_signaler(copro)
+    a = absence.charger(DOSSIER_DATA, copro)
+    if absence.en_cours(a, date.today()):
+        return _page_signaler(copro, "Merci, votre signalement est enregistré. Le syndic le traitera à son retour, le "
+                                     f"{absence.retour(a):%d/%m/%Y}.")
+    return _page_signaler(copro, "Merci, votre signalement est arrivé chez le syndic.")
+
+
+def lien_relais(copro: str) -> str | None:
+    a = absence.charger(DOSSIER_DATA, copro)
+    return f"{URL_PUBLIQUE}/relais/{copro}/{a['jeton_relais']}" if a and a.get("relais") else None
+
+
+@app.get("/relais/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
+def page_relais(request: Request, copro: str = Copro, jeton: str = Jeton):
+    """Pendant l'absence du syndic, la page privée du relais : signalements en cours et numéros d'astreinte."""
+    from . import interface
+    a = absence.charger(DOSSIER_DATA, copro) if copro in lister_copros() else None
+    if not absence.jeton_relais_valide(a, jeton, date.today()):
+        return HTMLResponse(page_signalement._page(
+            "Lien inactif", "", "<h1>Lien inactif</h1><p class=\"erreur\">Cette page ne s’ouvre que pendant "
+            "l’absence du syndic. Demandez-lui le lien à jour.</p>"), status_code=404)
+    fiche = fiche_de(copro)
+    ouverts = [dict(s, categorie_libelle=signalements.CATEGORIES[s["categorie"]]["libelle"],
+                    statut_libelle=signalements.STATUTS[s["statut"]])
+               for s in signalements.charger(DOSSIER_DATA, copro)["signalements"] if s["statut"] in signalements.OUVERTS]
+    ouverts.sort(key=lambda s: (s["niveau"] != "urgent", s["cree_le"]), reverse=False)
+    return interface.templates.TemplateResponse(request, "relais_public.html", {
+        "a": a, "copropriete": fiche["copropriete"]["nom"], "signalements": ouverts,
+        "numeros": signalements.URGENCES + signalements.astreintes(fiche),
+        "prestataires": [{"objet": c["objet"], "prestataire": c["prestataire"]} for c in fiche.get("contrats", [])],
+        "retour": absence.retour(a)}, headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
 
 
 @app.post("/signaler/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)

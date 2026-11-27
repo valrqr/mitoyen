@@ -44,6 +44,19 @@ La fiche de la copropriété (`config/<copro>.yaml`) reste la base. Ce que le sy
 le fichier de configuration. Les coordonnées bancaires et le prélèvement ne se modifient pas dans l'interface,
 et aucun code d'accès n'est jamais demandé.
 
+## Je pars en vacances
+
+Le lien « Je pars en vacances », en bas du menu, ouvre l'écran d'absence. Le syndic reste seul syndic : la loi ne lui permet pas de se faire remplacer, et seule l'AG peut autoriser une délégation de pouvoir pour un objet précis (loi du 10 juillet 1965, art. 18, majorité de l'article 25 ; à vérifier sur Légifrance).
+
+| Quand | Ce que fait Mitoyen |
+|---|---|
+| Avant le départ | Liste ce qui tombe entre aujourd'hui et la semaine du retour : appels de fonds à envoyer, convocations d'AG, contrats à résilier ou renouveler, diagnostics. Deux semaines avant le départ, le tableau de bord le rappelle |
+| Pendant l'absence | La page de signalement annonce la date de retour et, si le relais l'a accepté, son numéro dans les urgences. L'accusé de réception dit que le signalement sera traité au retour |
+| Pour le relais | Une page privée (lien noindex), ouverte de la veille du départ au dernier jour d'absence : signalements en cours, numéros d'astreinte, prestataires sous contrat. Ni comptes, ni nom des voisins qui signalent |
+| À l'AG | Un projet de résolution qui délègue au relais les seules urgences, avec un plafond par intervention |
+
+Au-delà de trois mois, Mitoyen refuse : ce n'est plus une absence, il faut désigner un nouveau syndic. « Je suis rentré » supprime l'absence et éteint le lien du relais.
+
 ## Choix de conception
 
 - **Deux polices, deux publics.** L'outil du syndic utilise Barlow, inspirée de la signalétique : fine, nette, en 16 px. La page de vote en ligne et les documents envoyés par courrier utilisent Atkinson Hyperlegible, dessinée pour les personnes malvoyantes. Les documents reçus par mail et les documents collectifs (affiches, PV, fiche synthétique) restent en Helvetica.

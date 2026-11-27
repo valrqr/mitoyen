@@ -112,7 +112,8 @@ def page(request: Request, gabarit: str, copro: str | None = None, **ctx) -> HTM
     return templates.TemplateResponse(request, gabarit, {
         "copro": copro, "fiche": fiche, "copros": A.lister_copros(), "jour": aujourdhui(request),
         "jour_demo": request.session.get("au"), "message": request.session.pop("message", None),
-        "petite_copro": bool(fiche) and A.consultation.regime(fiche)["applicable"], **ctx})
+        "petite_copro": bool(fiche) and A.consultation.regime(fiche)["applicable"],
+        "absence": A.absence.charger(A.DOSSIER_DATA, copro) if copro else None, **ctx})
 
 
 def exiger(request: Request, copro: str | None = None) -> None:
@@ -240,6 +241,13 @@ def tableau_de_bord(request: Request, copro: str):
             a_faire.append({"texte": al["titre"], "detail": al["message"],
                             "date": al.get("date"), "lien": None, "niveau": al["niveau"]})
     a_faire.extend(A.signalements.taches(A.DOSSIER_DATA, copro, fiche, jour))
+    absent = A.absence.charger(A.DOSSIER_DATA, copro)
+    if A.absence.prevue(absent, jour) and (date.fromisoformat(absent["du"]) - jour).days <= 14:
+        n = len(_a_preparer(copro, fiche, absent, jour))
+        if n:
+            a_faire.append({"texte": f"Départ le {date_fr(absent['du'])} : {n} chose{'s' if n > 1 else ''} à préparer",
+                            "detail": "Ce qui tombe pendant votre absence, à faire avant de partir.",
+                            "lien": f"/app/{copro}/absence", "niveau": "important"})
     for ext in TACHES_EXTENSIONS:
         a_faire.extend(ext(copro, fiche, jour))
     ordre = {"urgent": 0, "important": 1}
@@ -247,6 +255,62 @@ def tableau_de_bord(request: Request, copro: str):
     solde_ft = (fiche["fonds_travaux"].get("solde") or {}).get("montant")
     return page(request, "tableau.html", copro, a_faire=a_faire[:10], reste=max(0, len(a_faire) - 10), imp=imp,
                 ag=ag, solde_ft=solde_ft, appels=_appels(fiche, copro))
+
+
+# --------------------------------------------------------------------------- #
+# Je pars en vacances
+# --------------------------------------------------------------------------- #
+def _a_preparer(copro, fiche, absent, jour):
+    ag = _prochaine_ag(copro, jour)
+    if ag:
+        cal = A.assemblee.calendrier(fiche, A.ag_de(copro, ag["id"]), jour)
+        ag = {"id": ag["id"], "date": ag["date"], "limite_notification": cal["limite_notification"]}
+    horizon = max(1, (date.fromisoformat(absent["au"]) - jour).days + A.absence.MARGE_RETOUR_JOURS)
+    alertes = A.rapport_echeancier(copro, fiche, jour, horizon)["alertes"]
+    taches = A.absence.a_preparer(absent, jour, _appels(fiche, copro),
+                                  fiche["appels_de_fonds"].get("envoi_jours_avant", 21), ag, alertes)
+    liens = {"appels": f"/app/{copro}/appels"}
+    for t in taches:
+        t["lien"] = f"/app/{copro}/ag/{t['ag']}" if t["lien_type"] == "ag" else liens.get(t["lien_type"])
+    return taches
+
+
+@routeur.get("/{copro}/absence", response_class=HTMLResponse)
+def absence_page(request: Request, copro: str):
+    exiger(request, copro)
+    jour = aujourdhui(request)
+    fiche = A.fiche_de(copro)
+    absent = A.absence.charger(A.DOSSIER_DATA, copro)
+    relais_cs = [c for c in A.fiche_copro.actuels(fiche)
+                 if c["id"] in fiche["gouvernance"].get("conseil_syndical", [])
+                 and c["id"] != fiche["gouvernance"]["syndic"]["coproprietaire_id"]]
+    plafond = request.query_params.get("plafond", "")
+    return page(request, "absence.html", copro, onglet="tableau", a=absent, jour=jour,
+                taches=_a_preparer(copro, fiche, absent, jour) if absent else [],
+                en_cours=A.absence.en_cours(absent, jour), lien_relais=A.lien_relais(copro),
+                avis=A.absence.avis_voisins(absent, max(jour, date.fromisoformat(absent["du"]))) if absent else None,
+                suggestions=relais_cs, plafond=plafond,
+                resolution=A.absence.resolution_delegation((absent.get("relais") or {}).get("nom", "") if absent else "",
+                                                           int(plafond) if plafond.isdigit() else 0))
+
+
+@routeur.post("/{copro}/absence")
+async def absence_enregistrer(request: Request, copro: str):
+    exiger(request, copro)
+    form = await request.form()
+    try:
+        a = A.absence.enregistrer(A.DOSSIER_DATA, copro, {k: str(v) for k, v in form.items()}, aujourdhui(request))
+    except A.absence.AbsenceInvalide as e:
+        return retour(f"/app/{copro}/absence", f"Non enregistré : {e}", request)
+    return retour(f"/app/{copro}/absence", f"Absence enregistrée du {date_fr(a['du'])} au {date_fr(a['au'])}.", request)
+
+
+@routeur.post("/{copro}/absence/annuler")
+def absence_annuler(request: Request, copro: str):
+    exiger(request, copro)
+    A.absence.annuler(A.DOSSIER_DATA, copro)
+    return retour(f"/app/{copro}/absence", "Absence supprimée : tout redevient normal, et l'ancien lien du relais ne "
+                  "fonctionne plus.", request)
 
 
 # --------------------------------------------------------------------------- #
