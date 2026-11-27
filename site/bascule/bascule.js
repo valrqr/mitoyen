@@ -95,6 +95,8 @@ function validerCourrier(f) {
     prime_max: montant(f.prime_max, "Prime d’assurance annuelle"),
     mention_outil: !!f.mention_outil,
     autocollant: !!f.autocollant,
+    adoption_outil: !!f.adoption_outil,
+    outil_prix: montant(f.outil_prix, "Prix annuel de l’outil"),
     duree_mois: parseInt(f.duree_mois || "36", 10),
     date: aujourdhui()
   };
@@ -102,6 +104,7 @@ function validerCourrier(f) {
   if (!MODES[d.mode]) throw new Saisie("Choisissez un syndic bénévole ou coopératif.");
   d.candidat = d.candidat || d.expediteur_nom;
   if (!(d.duree_mois >= 1 && d.duree_mois <= 36)) throw new Saisie("Durée du mandat : entre 1 et 36 mois (trois ans au plus).");
+  if (d.outil_prix !== null && d.outil_prix < 0) throw new Saisie("Prix annuel de l’outil : un montant positif.");
   if (d.prime_max !== null && d.prime_max < 0) throw new Saisie("Prime d’assurance annuelle : un montant positif.");
   if (d.prise_de_fonction === "date") {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(f.date_prise || "")) throw new Saisie("Date de prise de fonction : choisissez une date.");
@@ -140,6 +143,12 @@ function resolutions(d) {
       texte: "L’assemblée générale décide de souscrire, pour le compte du syndicat, une assurance couvrant la responsabilité civile du syndic non professionnel" + plafond + ". La prime est répartie en charges communes générales et inscrite au budget prévisionnel.",
       majorite: "Majorité de l’article 24 de la loi du 10 juillet 1965." });
   }
+  if (d.adoption_outil) {
+    var prix = d.outil_prix ? "au prix de " + euros(d.outil_prix) + " par an" : "au prix annuel indiqué dans la proposition jointe à la convocation";
+    res.push({ titre: "Adoption de l’outil de gestion Mitoyen",
+      texte: "L’assemblée générale approuve l’utilisation par le syndic de l’outil de gestion Mitoyen (logiciel libre, mitoyen.app) pour les appels de fonds, la comptabilité et les assemblées générales du syndicat, " + prix + ". L’abonnement est souscrit au nom du syndicat, qui reste propriétaire de ses données et peut les exporter à tout moment ; il est résiliable à tout moment, avec effet à la fin de l’année payée. La dépense est répartie en charges communes générales et inscrite au budget prévisionnel.",
+      majorite: "Majorité de l’article 24 de la loi du 10 juillet 1965." });
+  }
   if (d.autocollant) {
     res.push({ titre: "Autorisation d’apposer un autocollant Mitoyen sur l’interphone",
       texte: "L’assemblée générale autorise l’apposition, sur l’interphone de l’immeuble, d’un autocollant rond de 3 cm de diamètre indiquant que la copropriété est gérée avec Mitoyen. Il est fourni gratuitement, n’engage la copropriété à rien et sera retiré sur simple décision de l’assemblée générale.",
@@ -164,7 +173,7 @@ function courrier(d) {
       d.residence_adresse.replace(/\n/g, ", ") + ", et en application de l’article 10 du décret du 17 mars 1967, je vous demande d’inscrire à l’ordre du jour de la prochaine assemblée générale les questions suivantes. Le projet de résolution de chacune est joint en annexe."),
     h("ol", null, res.map(function (r) { return h("li", null, r.titre + "."); })),
     h("p", null, "Si la date de réception de cette demande ne permettait pas de les inscrire à la prochaine assemblée, je vous remercie de les porter à l’ordre du jour de l’assemblée suivante, comme le prévoit le même article."),
-    d.mention_outil ? h("p", null, "Pour information, le syndic désigné s’appuiera sur Mitoyen, un outil de gestion libre, pour préparer les appels de fonds, les assemblées générales et la comptabilité du syndicat.") : null,
+    d.mention_outil && !d.adoption_outil ? h("p", null, "Pour information, le syndic désigné s’appuiera sur Mitoyen, un outil de gestion libre, pour préparer les appels de fonds, les assemblées générales et la comptabilité du syndicat.") : null,
     h("p", null, "Je vous remercie de bien vouloir m’accuser réception de cette demande."),
     h("p", null, "Je vous prie d’agréer, Madame, Monsieur, l’expression de mes salutations distinguées."),
     h("p", { "class": "signature" }, d.expediteur_nom),
