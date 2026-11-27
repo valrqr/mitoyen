@@ -191,6 +191,18 @@ footer p + p { margin-top: 8px; }
 .bulletin-apercu .signe { flex: none; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--encre); color: var(--papier); font-weight: 700; font-size: 15px; }
 .bulletin-apercu .attention .signe { background: var(--orange); }
 .pied-apercu { margin: 0; padding: 14px 22px; background: var(--pierre); font-size: 14px; }
+.absence .cadre { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+.absence h2 { max-width: 18ch; }
+.absence .chapeau { margin-top: 18px; max-width: 38ch; }
+.signalement-apercu { margin: 0; border: 2px solid var(--encre); border-radius: 12px; overflow: hidden; background: var(--papier); }
+.signalement-apercu figcaption { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px; padding: 18px 22px; border-bottom: 1px solid var(--filet); font: 700 21px/1.15 "Barlow Semi Condensed", sans-serif; color: var(--encre); }
+.signalement-apercu figcaption .petit { font-family: Barlow, sans-serif; font-weight: 400; font-size: 14px; color: var(--gris); }
+.signalement-apercu .bandeau { margin: 18px 22px 0; padding: 14px 16px; background: var(--pierre); border-radius: 8px; font-size: 15px; line-height: 1.45; }
+.signalement-apercu .urgences { margin: 14px 22px 18px; padding: 14px 16px; border: 2px solid var(--encre); border-radius: 8px; font-size: 15px; }
+.signalement-apercu .urgences p { margin: 0 0 8px; color: var(--encre); }
+.signalement-apercu .urgences ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.signalement-apercu .urgences li { display: grid; grid-template-columns: 8em 1fr; gap: 12px; line-height: 1.4; }
+.signalement-apercu .numero { font-weight: 700; color: var(--encre); text-decoration: underline; white-space: nowrap; }
 .papier .cadre, .chantier .cadre, .espace .cadre { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
 .papier .chapeau, .chantier .chapeau, .espace .chapeau { margin-top: 18px; max-width: 34ch; }
 .document { display: block; width: 100%; height: auto; background: var(--papier); border: 1px solid var(--filet); border-radius: 6px; box-shadow: 0 20px 40px rgba(30,30,30,.12); }
@@ -238,7 +250,7 @@ footer p + p { margin-top: 8px; }
 
 @media (max-width: 1199px) { .telephone .vignette { right: -24px; } }
 @media (max-width: 809px) {
-  .seance .cadre, .papier .cadre, .chantier .cadre, .espace .cadre, .liste .cadre, .proposer .cadre, .vente .cadre { grid-template-columns: 1fr; gap: 40px; }
+  .seance .cadre, .papier .cadre, .chantier .cadre, .espace .cadre, .liste .cadre, .proposer .cadre, .vente .cadre, .absence .cadre { grid-template-columns: 1fr; gap: 40px; }
   .seance .cadre > div:last-child { order: -1; }
   .telephone { width: 240px; }
   .telephone .vignette { right: -40px; width: 190px; }
