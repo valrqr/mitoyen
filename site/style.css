@@ -162,6 +162,15 @@ footer p + p { margin-top: 8px; }
 .proposer .cadre { display: grid; grid-template-columns: 1.1fr 1fr; gap: 64px; align-items: center; }
 .proposer h2 { max-width: 18ch; }
 .proposer .chapeau { margin-top: 16px; max-width: 40ch; }
+.proposer .etapes-cadre { display: block; margin-top: 72px; }
+.etapes-titre { margin: 0 0 28px; font: 700 21px/1.2 "Barlow Semi Condensed", sans-serif; color: var(--encre); }
+.etapes { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 32px; position: relative; }
+.etapes li:not(:last-child)::after { content: ""; position: absolute; top: 19px; left: 52px; right: -20px; height: 2px; background: var(--encre); }
+.etapes li { position: relative; display: flex; flex-direction: column; gap: 6px; font-size: 16px; line-height: 1.5; }
+.etapes .num { width: 40px; height: 40px; border-radius: 50%; background: var(--encre); color: var(--papier); display: grid; place-items: center; font: 700 18px/1 "Barlow", sans-serif; margin-bottom: 10px; }
+.etapes strong { font: 700 19px/1.2 "Barlow Semi Condensed", sans-serif; color: var(--encre); }
+.etapes .quand { font-size: 14px; color: var(--gris); }
+.etapes-note { margin-top: 28px; }
 .lettre-apercu { margin: 0; padding: 28px 30px; background: var(--papier); border: 1px solid var(--filet); border-radius: 6px;
                  box-shadow: 0 20px 40px rgba(30,30,30,.10); transform: rotate(-1.2deg); font: 400 15px/1.5 Helvetica, Arial, sans-serif; color: var(--encre); letter-spacing: 0; }
 .lettre-apercu p + p, .lettre-apercu ol { margin-top: 10px; }
@@ -255,6 +264,11 @@ footer p + p { margin-top: 8px; }
 @media (max-width: 1199px) { .telephone .vignette { right: -24px; } }
 @media (max-width: 809px) {
   .seance .cadre, .papier .cadre, .chantier .cadre, .espace .cadre, .liste .cadre, .proposer .cadre, .vente .cadre, .absence .cadre { grid-template-columns: 1fr; gap: 40px; }
+  .proposer .etapes-cadre { margin-top: 48px; }
+  .etapes { grid-template-columns: 1fr; gap: 24px; }
+  .etapes li:not(:last-child)::after { top: 52px; bottom: -16px; left: 19px; right: auto; width: 2px; height: auto; }
+  .etapes li { padding-left: 60px; }
+  .etapes .num { position: absolute; left: 0; top: 0; margin: 0; }
   .seance .cadre > div:last-child { order: -1; }
   .telephone { width: 240px; }
   .telephone .vignette { right: -40px; width: 190px; }
