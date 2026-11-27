@@ -32,6 +32,7 @@
     <div class="bas">
       {% if jour_demo %}<div class="demo">Date de démonstration : {{ jour|date_fr }}.
         <a href="?au=">Revenir à aujourd'hui</a></div>{% endif %}
+      {% if copro %}<a href="/app/{{ copro }}/releve">Plan de relève</a>{% endif %}
       {% if copro %}<a href="/app/{{ copro }}/absence">{% if absence and absence.au >= jour.isoformat() %}Absence du {{ absence.du|date_fr }} au {{ absence.au|date_fr }}{% else %}Je pars en vacances{% endif %}</a>{% endif %}
       {% if copros|length > 1 %}<a href="/app">Changer de copropriété</a>{% endif %}
       <form method="post" action="/app/deconnexion"><button class="secondaire" type="submit">Se déconnecter</button></form>

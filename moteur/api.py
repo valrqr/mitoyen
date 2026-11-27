@@ -124,6 +124,7 @@ import consultation  # noqa: E402
 import rappel_ag  # noqa: E402
 import absence  # noqa: E402
 import quote_part  # noqa: E402
+import releve  # noqa: E402
 import ag_bref  # noqa: E402
 import evolution_budget  # noqa: E402
 import fiche_edition  # noqa: E402
@@ -1611,6 +1612,72 @@ def page_signaler(copro: str = Copro, jeton: str = Jeton, envoye: int = 0):
         return _page_signaler(copro, "Merci, votre signalement est enregistré. Le syndic le traitera à son retour, le "
                                      f"{absence.retour(a):%d/%m/%Y}.")
     return _page_signaler(copro, "Merci, votre signalement est arrivé chez le syndic.")
+
+
+def lien_releve(copro: str) -> str | None:
+    r = releve.charger(DOSSIER_DATA, copro)
+    return f"{URL_PUBLIQUE}/releve/{copro}/{r['jeton']}" if r.get("actif") and r.get("jeton") else None
+
+
+def dossier_releve(copro: str, jour: date) -> Path:
+    """Le dossier de passation, fabriqué à la demande (donc à jour) ; rangé sous transmission/ pour ne pas
+    s'inclure lui-même dans les dossiers suivants."""
+    fiche = fiche_de(copro)
+    e = impayes.etat(fiche, DOSSIER_SORTIE, DOSSIER_DATA, copro, jour)
+    r = transmission.generer(fiche, releve.parametres_dossier(jour), e, impayes.charger_relances(DOSSIER_DATA, copro),
+                             DOSSIER_DATA, DOSSIER_SORTIE, copro, DOSSIER_SORTIE / copro / "transmission" / "releve" / "dernier", jour)
+    return Path(r["chemin"])
+
+
+def convocation_releve(copro: str, jour: date) -> Path:
+    return releve.generer_convocation(fiche_de(copro), releve.charger(DOSSIER_DATA, copro), jour,
+                                      DOSSIER_SORTIE / copro / "releve" / "projet_convocation.pdf")
+
+
+def _releve_invalide() -> HTMLResponse:
+    return HTMLResponse(page_signalement._page(
+        "Lien invalide", "", "<h1>Lien invalide</h1><p class=\"erreur\">Ce lien a été coupé ou renouvelé. "
+        "Demandez le lien à jour au syndic ou au conseil syndical.</p>"), status_code=404)
+
+
+@app.get("/releve/{copro}/{jeton}", response_class=HTMLResponse, include_in_schema=False)
+def page_releve(request: Request, copro: str = Copro, jeton: str = Jeton):
+    """La page du suppléant : marche à suivre si le syndic s'arrête, convocation, dossier de passation."""
+    from . import interface
+    if copro not in lister_copros() or not releve.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return _releve_invalide()
+    fiche = fiche_de(copro)
+    r = releve.charger(DOSSIER_DATA, copro)
+    noms = {c["id"]: c["nom"] for c in fiche["coproprietaires"]}
+    syndic = noms.get(releve._syndic(fiche), "le syndic")
+    return interface.templates.TemplateResponse(request, "releve_public.html", {
+        "copropriete": fiche["copropriete"]["nom"], "syndic": syndic, "cooperatif": releve.cooperatif(fiche),
+        "suppleants": [{"nom": noms[s["id"]], "role": releve.ROLES[s["role"]]} for s in r["suppleants"]],
+        "etapes": releve.marche_a_suivre(fiche), "dossier": releve.acces_dossier(fiche, r),
+        "numeros": signalements.URGENCES + signalements.astreintes(fiche), "base": f"/releve/{copro}/{jeton}"},
+        headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
+
+
+@app.get("/releve/{copro}/{jeton}/convocation.pdf", include_in_schema=False)
+def releve_convocation(copro: str = Copro, jeton: str = Jeton):
+    if copro not in lister_copros() or not releve.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return _releve_invalide()
+    f = convocation_releve(copro, date.today())
+    releve.noter_telechargement(DOSSIER_DATA, copro, "convocation", "suppleant")
+    return FileResponse(f, media_type="application/pdf", filename="projet_convocation.pdf",
+                        headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
+
+
+@app.get("/releve/{copro}/{jeton}/dossier.zip", include_in_schema=False)
+def releve_dossier(copro: str = Copro, jeton: str = Jeton):
+    if copro not in lister_copros() or not releve.jeton_valide(DOSSIER_DATA, copro, jeton):
+        return _releve_invalide()
+    if not releve.acces_dossier(fiche_de(copro), releve.charger(DOSSIER_DATA, copro)):
+        raise HTTPException(403, "Le dossier complet n'est remis qu'à un suppléant membre du conseil syndical")
+    f = dossier_releve(copro, date.today())
+    releve.noter_telechargement(DOSSIER_DATA, copro, "dossier", "suppleant")
+    return FileResponse(f, media_type="application/zip", filename=f.name,
+                        headers={"Cache-Control": "no-store", "X-Robots-Tag": "noindex"})
 
 
 def lien_relais(copro: str) -> str | None:

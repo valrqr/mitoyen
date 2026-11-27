@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Relève du syndic · {{ copropriete }}</title>
+  <link rel="icon" type="image/png" href="/statique/icone_64.png">
+  <link rel="stylesheet" href="/statique/app.css">
+</head>
+<body class="public">
+<main class="public-page relais-public">
+  <p class="public-marque"><img src="/statique/icone_64.png" alt="" width="28" height="28"> Mitoyen</p>
+  <h1>Si le syndic s'arrête</h1>
+  <p class="chapeau">{{ copropriete }}. {{ syndic }}, syndic bénévole, a désigné {{ "ses suppléants" if suppleants|length > 1 else "son suppléant" }} : {% for s in suppleants %}{{ s.nom }} ({{ s.role }}){{ ", " if not loop.last }}{% endfor %}. Tant que le syndic est en fonction, il n'y a rien à faire. Gardez ce lien : il sert le jour où il ne pourrait plus gérer la copropriété.</p>
+
+  <h2>La marche à suivre</h2>
+  <ol class="relais-etapes">
+    {% for e in etapes %}<li>{{ e }}</li>{% endfor %}
+  </ol>
+
+  <h2>Les documents</h2>
+  <ul class="relais-liste">
+    <li><a href="{{ base }}/convocation.pdf" target="_blank" rel="noopener"><strong>Projet de convocation</strong></a><br>
+      <span class="discret">{{ "Réunion du conseil syndical pour élire un nouveau syndic." if cooperatif else "Assemblée générale pour désigner un nouveau syndic, préremplie : il reste la date et le lieu." }}</span></li>
+    {% if dossier %}
+    <li><a href="{{ base }}/dossier.zip"><strong>Dossier de passation</strong></a><br>
+      <span class="discret">Comptes, état des copropriétaires, contrats, procès-verbaux et archives, fabriqué au moment du téléchargement. Il contient des données personnelles : il ne se transmet qu'au nouveau syndic. Le syndic voit chaque téléchargement.</span></li>
+    {% else %}
+    <li><strong>Dossier de passation</strong><br>
+      <span class="discret">Il n'est remis qu'à un suppléant membre du conseil syndical. Le nouveau syndic le demandera à l'ancien, ou à ses proches (loi du 10 juillet 1965, art. 18-2).</span></li>
+    {% endif %}
+  </ul>
+
+  <h2>En cas d'urgence pour l'immeuble</h2>
+  <ul class="relais-numeros">
+    {% for libelle, numero in numeros %}<li><a href="tel:{{ numero|replace(' ', '') }}">{{ numero }}</a> : {{ libelle }}</li>{% endfor %}
+  </ul>
+
+  <p class="discret">Pas un conseil juridique : l'ADIL de votre département vous renseigne gratuitement. Établi avec <a href="https://mitoyen.app">Mitoyen</a>.</p>
+</main>
+</body>
+</html>

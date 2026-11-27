@@ -337,3 +337,12 @@ label.case input { margin-top: .25rem; }
 .relais-liste p { margin: .4rem 0 0; }
 .relais-numeros { padding-left: 1.2rem; line-height: 1.8; }
 .relais-numeros a { font-weight: 600; }
+
+/* Plan de relève */
+.liste-releve { list-style: none; padding: 0; margin: 0 0 1.8rem; display: grid; gap: .6rem; }
+.liste-releve li { display: flex; gap: .8rem; align-items: flex-start; line-height: 1.45; }
+.liste-releve .pastille { flex: none; width: 1.6rem; height: 1.6rem; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: .9rem; }
+.liste-releve .ok .pastille { background: var(--encre); color: var(--papier); }
+.liste-releve .manque .pastille { border: 2px solid var(--encre); color: var(--encre); box-sizing: border-box; }
+.relais-etapes { padding-left: 1.4rem; line-height: 1.55; margin: 0 0 1.6rem; }
+.relais-etapes li + li { margin-top: .5rem; }

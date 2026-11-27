@@ -126,6 +126,7 @@ L'interface web du syndic est servie sous `/app` (voir [interface.md](interface.
 | POST | `/copros/{copro}/reglement/redaction` | Rédige la version en clair (Mistral), citations vérifiées |
 | GET | `/copros/{copro}/reglement` | Thèmes, règles, points écartés, date de validation |
 | GET | `/copros/{copro}/reglement-en-clair.pdf?usage=` | Le document ; `usage=true` : les règles de vie pour un locataire |
+| GET | `/releve/{copro}/{jeton}` | Page du suppléant (plan de relève) ; `/convocation.pdf` et `/dossier.zip` (dossier de passation à jour, suppléant membre du conseil syndical seulement) |
 | GET | `/relais/{copro}/{jeton}` | Page privée du relais pendant l'absence du syndic (sans clé, `noindex`, ouverte de la veille du départ au retour) |
 | GET | `/reglement/{copro}/{jeton}` | Page publique du règlement partagé (sans clé ; lien activé par le syndic, `noindex`) |
 | GET | `/reglement/{copro}/{jeton}/en-clair.pdf?grand=&usage=` | La version en clair validée, en grands caractères ou en extraits |

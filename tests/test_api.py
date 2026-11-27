@@ -1876,3 +1876,47 @@ def test_je_pars_en_vacances():
         d = signalements.charger(DOSSIER_DATA, "mimosas")
         d["signalements"] = [s for s in d["signalements"] if s["lieu"] != "Cave 3"]
         signalements.sauver(DOSSIER_DATA, "mimosas", d)
+
+
+def test_plan_de_releve():
+    """Suppléants, page du suppléant, convocation, dossier de passation à jour et journal des téléchargements."""
+    import shutil
+    import zipfile
+    from moteur.api import DOSSIER_DATA, DOSSIER_SORTIE
+    import releve
+    n = _navigateur()
+    n.post("/app/connexion", data={"mot_de_passe": os.environ["MOTEUR_TOKEN"]})
+    try:
+        page = n.get("/app/mimosas/releve").text
+        assert "Relève prête" in page and "Plan de relève" in page
+        r = n.post("/app/mimosas/releve", data={"suppleant1": "CP07", "role1": "vice_president"})
+        assert "demandez-lui d" in r.text.replace("&#39;", "'")
+        r = n.post("/app/mimosas/releve", data={"suppleant1": "CP07", "role1": "vice_president", "accord1": "2026-11-20"})
+        assert "Suppléants enregistrés" in r.text
+        n.post("/app/mimosas/releve/partage", data={"action": "activer"})
+        j = releve.charger(DOSSIER_DATA, "mimosas")["jeton"]
+        base = f"/releve/mimosas/{j}"
+        p = c.get(base)
+        assert p.status_code == 200 and p.headers["x-robots-tag"] == "noindex" and "Si le syndic s" in p.text
+        conv = c.get(base + "/convocation.pdf")
+        assert conv.status_code == 200 and conv.content.startswith(b"%PDF")
+        z = c.get(base + "/dossier.zip")
+        assert z.status_code == 200
+        noms = zipfile.ZipFile(io.BytesIO(z.content)).namelist()
+        assert "00_bordereau.pdf" in noms and not any("transmission" in x for x in noms)
+        # Le syndic voit le téléchargement ; l'historique des transmissions reste propre
+        page = n.get("/app/mimosas/releve").text
+        assert "par le suppléant" in page
+        assert "dernier" not in n.get("/app/mimosas/transmission").text
+        # Suppléant hors conseil syndical : pas de dossier complet
+        n.post("/app/mimosas/releve", data={"suppleant1": "CP01", "role1": "autre", "accord1": "2026-11-20"})
+        assert c.get(base + "/dossier.zip").status_code == 403
+        assert "membre du conseil syndical" in c.get(base).text
+        n.post("/app/mimosas/releve/partage", data={"action": "couper"})
+        assert c.get(base).status_code == 404 and c.get(base + "/convocation.pdf").status_code == 404
+    finally:
+        f = DOSSIER_DATA / "mimosas" / "releve.json"
+        if f.is_file():
+            f.unlink()
+        shutil.rmtree(DOSSIER_SORTIE / "mimosas" / "transmission" / "releve", ignore_errors=True)
+        shutil.rmtree(DOSSIER_SORTIE / "mimosas" / "releve", ignore_errors=True)

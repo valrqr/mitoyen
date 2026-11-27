@@ -905,6 +905,69 @@ def documents_vente(request: Request, copro: str, lots: list[int] = Form(...)):
                   + (f", {a_completer} rubrique(s) à compléter d'après vos comptes." if a_completer else "."), request)
 
 
+# --------------------------------------------------------------------------- #
+# Plan de relève
+# --------------------------------------------------------------------------- #
+@routeur.get("/{copro}/releve", response_class=HTMLResponse)
+def releve_page(request: Request, copro: str, erreur: str | None = None, form: dict | None = None):
+    exiger(request, copro)
+    jour = aujourdhui(request)
+    fiche = A.fiche_de(copro)
+    r = A.releve.charger(A.DOSSIER_DATA, copro)
+    etat = A.releve.etat(fiche, r, jour)
+    noms = {c["id"]: c["nom"] for c in fiche["coproprietaires"]}
+    cs = fiche["gouvernance"].get("conseil_syndical") or []
+    candidats = [{"id": c["id"], "nom": c["nom"], "cs": c["id"] in cs} for c in A.fiche_copro.actuels(fiche)
+                 if c["id"] != fiche["gouvernance"]["syndic"]["coproprietaire_id"]]
+    candidats.sort(key=lambda c: (not c["cs"], c["nom"]))
+    f = form or {}
+    for i, sp in enumerate(r["suppleants"], 1):
+        f.setdefault(f"suppleant{i}", sp["id"]); f.setdefault(f"role{i}", sp["role"]); f.setdefault(f"accord{i}", sp["accord_le"])
+    return page(request, "releve.html", copro, onglet="documents", r=r, etat=etat,
+                prets=sum(1 for x in etat if x["ok"]), cooperatif=A.releve.cooperatif(fiche),
+                candidats=candidats, roles=A.releve.ROLES, f=f, erreur=erreur, lien=A.lien_releve(copro),
+                noms=noms, telechargements=list(reversed(r["telechargements"]))[:8],
+                acces_dossier=A.releve.acces_dossier(fiche, r))
+
+
+@routeur.post("/{copro}/releve")
+async def releve_enregistrer(request: Request, copro: str):
+    exiger(request, copro)
+    form = {k: str(v) for k, v in (await request.form()).items()}
+    try:
+        A.releve.enregistrer(A.DOSSIER_DATA, copro, A.fiche_de(copro), form, aujourdhui(request))
+    except A.releve.ReleveInvalide as e:
+        return releve_page(request, copro, erreur=str(e), form=form)
+    return retour(f"/app/{copro}/releve", "Suppléants enregistrés.", request)
+
+
+@routeur.post("/{copro}/releve/partage")
+def releve_partage(request: Request, copro: str, action: str = Form(...)):
+    exiger(request, copro)
+    try:
+        A.releve.partager(A.DOSSIER_DATA, copro, action != "couper", renouveler=action == "renouveler")
+    except A.releve.ReleveInvalide as e:
+        return retour(f"/app/{copro}/releve", str(e), request)
+    return retour(f"/app/{copro}/releve#lien", {"couper": "Lien coupé : l'ancien ne fonctionne plus.",
+                                                "renouveler": "Nouveau lien créé : l'ancien ne fonctionne plus."}
+                  .get(action, "Lien du suppléant créé. Envoyez-le-lui."), request)
+
+
+@routeur.get("/{copro}/releve/convocation.pdf")
+def releve_convocation_syndic(request: Request, copro: str):
+    exiger(request, copro)
+    return FileResponse(A.convocation_releve(copro, aujourdhui(request)), media_type="application/pdf",
+                        filename="projet_convocation.pdf")
+
+
+@routeur.get("/{copro}/releve/dossier.zip")
+def releve_dossier_syndic(request: Request, copro: str):
+    exiger(request, copro)
+    chemin = A.dossier_releve(copro, aujourdhui(request))
+    A.releve.noter_telechargement(A.DOSSIER_DATA, copro, "dossier", "syndic")
+    return FileResponse(chemin, media_type="application/zip", filename=chemin.name)
+
+
 @routeur.get("/{copro}/transmission", response_class=HTMLResponse)
 def transmission_page(request: Request, copro: str, erreur: str | None = None, form: dict | None = None):
     exiger(request, copro)

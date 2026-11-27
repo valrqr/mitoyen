@@ -57,6 +57,18 @@ Le lien « Je pars en vacances », en bas du menu, ouvre l'écran d'absence. Le 
 
 Au-delà de trois mois, Mitoyen refuse : ce n'est plus une absence, il faut désigner un nouveau syndic. « Je suis rentré » supprime l'absence et éteint le lien du relais.
 
+## Plan de relève
+
+Le lien « Plan de relève », en bas du menu, prépare la suite si le syndic devait s'arrêter du jour au lendemain. Il n'y a qu'un syndic, seul responsable ; la loi prévoit qui prend le relais (loi du 10 juillet 1965, à vérifier sur Légifrance) : en syndicat coopératif, un vice-président élu par le conseil syndical (art. 17-1) ; sinon, le président du conseil syndical, qui peut convoquer l'AG pour désigner un nouveau syndic (art. 18) ; sans conseil syndical, le tribunal.
+
+| Élément | Ce que fait Mitoyen |
+|---|---|
+| Suppléants | Un ou deux copropriétaires actuels, jamais le syndic, avec leur rôle et la date de leur accord (obligatoire) |
+| « Relève prête ? » | Sept points : accord, bon rôle selon le mode de gestion, conseil syndical, coordonnées, lien envoyé, mandat qui court encore, dossier vérifié depuis moins de six mois |
+| Page du suppléant | Lien privé (noindex), désactivé par défaut, renouvelable : marche à suivre, projet de convocation, numéros d'astreinte |
+| Dossier de passation | Le dossier de transfert (art. 18-2), fabriqué au moment du téléchargement, donc toujours à jour ; remis seulement à un suppléant membre du conseil syndical. Chaque téléchargement est noté et visible par le syndic |
+| Projet de convocation | AG « désignation d'un nouveau syndic » signée par le président du conseil syndical, ou réunion du conseil syndical en coopératif ; date et lieu à compléter |
+
 ## Choix de conception
 
 - **Deux polices, deux publics.** L'outil du syndic utilise Barlow, inspirée de la signalétique : fine, nette, en 16 px. La page de vote en ligne et les documents envoyés par courrier utilisent Atkinson Hyperlegible, dessinée pour les personnes malvoyantes. Les documents reçus par mail et les documents collectifs (affiches, PV, fiche synthétique) restent en Helvetica.

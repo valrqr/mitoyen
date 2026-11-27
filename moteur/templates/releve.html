@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block contenu %}
+<h1>Plan de relève</h1>
+<p class="chapeau">Si vous deviez arrêter du jour au lendemain, la copropriété ne doit pas rester sans gestion. Désignez un ou deux suppléants : ils sauront quoi faire et récupéreront un dossier complet et à jour. Vous restez le seul syndic tant que vous êtes en fonction.</p>
+{% if erreur %}<p class="erreur" role="alert">{{ erreur }}</p>{% endif %}
+
+<div class="colonnes">
+<section>
+  <h2>Relève prête ? {{ prets }} sur {{ etat|length }}</h2>
+  <ul class="liste-releve">
+    {% for x in etat %}
+    <li class="{{ 'ok' if x.ok else 'manque' }}">
+      <span class="pastille" aria-hidden="true">{{ "✓" if x.ok else "!" }}</span>
+      <div><strong>{{ x.titre }}</strong><span class="visuellement-cache">{{ " : fait" if x.ok else " : à faire" }}</span><br><span class="discret">{{ x.detail }}</span></div>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <h2>Les suppléants</h2>
+  <form method="post" action="/app/{{ copro }}/releve" class="formulaire fiche-copro">
+    {% for i in [1, 2] %}
+    <fieldset>
+      <legend>{{ "Suppléant" if i == 1 else "Second suppléant (facultatif)" }}</legend>
+      <label>Copropriétaire
+        <select name="suppleant{{ i }}">
+          <option value="">—</option>
+          {% for c in candidats %}<option value="{{ c.id }}"{% if f['suppleant' ~ i] == c.id %} selected{% endif %}>{{ c.nom }}{{ " (conseil syndical)" if c.cs }}</option>{% endfor %}
+        </select></label>
+      <label>Son rôle
+        <select name="role{{ i }}">
+          {% for k, v in roles.items() %}<option value="{{ k }}"{% if f['role' ~ i] == k %} selected{% endif %}>{{ v|capitalize }}</option>{% endfor %}
+        </select></label>
+      <label>Date de son accord <input type="date" name="accord{{ i }}" value="{{ f['accord' ~ i] or '' }}"></label>
+    </fieldset>
+    {% endfor %}
+    <p class="discret" style="margin:0">{% if cooperatif %}Syndicat coopératif : le conseil syndical peut élire un vice-président qui vous supplée en cas d'empêchement.{% else %}Choisissez de préférence le président du conseil syndical : si vous êtes empêché, c'est lui qui peut convoquer l'assemblée générale.{% endif %} Demandez toujours son accord avant.</p>
+    <div><button type="submit">Enregistrer</button></div>
+  </form>
+</section>
+
+<aside>
+  <h3 id="lien">La page du suppléant</h3>
+  <p class="discret" style="margin-top:0">Elle donne la marche à suivre, le projet de convocation et{% if acces_dossier %} le dossier de passation, fabriqué au moment du téléchargement, donc toujours à jour{% else %}, si le suppléant siège au conseil syndical, le dossier de passation{% endif %}. Pas indexée par les moteurs de recherche.</p>
+  {% if lien %}<p class="lien-public"><a href="{{ lien }}" target="_blank" rel="noopener">{{ lien }}</a></p>{% endif %}
+  <form method="post" action="/app/{{ copro }}/releve/partage" style="display:grid;gap:.5rem">
+    {% if lien %}
+    <button type="submit" name="action" value="renouveler" class="secondaire">Renouveler le lien</button>
+    <button type="submit" name="action" value="couper" class="secondaire">Couper le lien</button>
+    {% else %}
+    <button type="submit" name="action" value="activer"{% if not r.suppleants %} disabled{% endif %}>Créer le lien du suppléant</button>
+    {% endif %}
+  </form>
+
+  <h3>Vérifier vous-même</h3>
+  <p><a href="/app/{{ copro }}/releve/dossier.zip">Télécharger le dossier de passation</a><br>
+     <a href="/app/{{ copro }}/releve/convocation.pdf" target="_blank" rel="noopener">Voir le projet de convocation</a></p>
+
+  {% if telechargements %}
+  <h3>Derniers téléchargements</h3>
+  <ul class="discret" style="padding-left:1.1rem;margin:0">
+    {% for t in telechargements %}<li>{{ t.le[:10]|date_fr }} : {{ "dossier" if t.quoi == "dossier" else "convocation" }}, par {{ "vous" if t.par == "syndic" else "le suppléant" }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</aside>
+</div>
+{% endblock %}
